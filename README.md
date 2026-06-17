@@ -182,6 +182,7 @@ Durante el desarrollo se utilizó **Graphify**, una herramienta de grafos de con
 - **Navegación inteligente del código fuente**: Consultas como "encuentra la relación entre el controlador de transacciones y el repositorio JPA" devuelven subgrafos específicos sin necesidad de leer archivos completos.
 - **Detección de comunidades**: Identifica agrupaciones lógicas de archivos (por bounded context, por capa arquitectónica) para entender la estructura del proyecto.
 - **Actualización automática**: Cada vez que se modifica código, Graphify actualiza el grafo en segundo plano (solo AST, sin costo de API).
+- **Ahorro de tokens**: Al enviar solo el subgrafo relevante (ej: las 3-5 clases involucradas en un flujo) en lugar de archivos completos, se reduce drásticamente el consumo de tokens del modelo de IA. En proyectos grandes, esto puede significar un ahorro del 60-80% en contexto enviado por consulta, lo que se traduce en respuestas más rápidas y menor costo de API.
 
 Graphify fue particularmente útil para mantener el contexto arquitectónico durante los 6 ciclos de corrección, permitiendo al orquestador entender rápidamente el impacto de cada cambio sin releer toda la base de código.
 
