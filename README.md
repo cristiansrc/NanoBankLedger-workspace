@@ -245,7 +245,7 @@ Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 Registro de los prompts clave utilizados durante el desarrollo del MVP:
 
 | # | Prompt | Agente | Propósito |
-|---|---|---|---|---|
+|---|---|---|---|
 | 1 | *"Prompt de inicialización completo: Rol Master-Orchestrator, estructura Monorepo, stack tecnológico (Spring Boot + Kotlin, Angular 17+, PostgreSQL, Hexagonal, JWT, Signals, Flyway), estrategia de documentación, orquestación multi-agente y bitácora. Ver texto completo en [desarrollo-log.md](./desarrollo-log.md) (líneas 1-60)."* | master-orchestrator | Prompt inicial de Cristhiam Reina al orquestador con todas las directrices del proyecto |
 | 2 | *"Define alignment decisions for NanoBank Ledger MVP considering PostgreSQL vs NoSQL, Hexagonal Architecture, JWT rotation, monorepo structure, API-First, testing strategy, UI framework, deployment and migration strategy."* | enterprise-architect | Alineación inicial del proyecto (9 decisiones locked) |
 | 3 | *"Crear la Master Spec para NanoBank Ledger siguiendo el estándar spec-driven-development. Incluir: propósito, stack técnico, arquitectura Hexagonal, modelo de datos (PostgreSQL), reglas de negocio, contratos API (OpenAPI 3.1), seguridad (JWT rotation), estrategia de testing (80% cobertura), despliegue (Docker Compose) y criterios de aceptación."* | planner | Creación de la Master Spec |
