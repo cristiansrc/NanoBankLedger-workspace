@@ -54,6 +54,58 @@ Sistema de gestión financiera con wallets, transacciones, categorías, autentic
 | Supervisión humana en gates de validación | ✅ |
 | Skills cargados: 23 skills del ecosistema config-ai | ✅ |
 
+
+
+## Justificación de Base de Datos
+
+### ¿Por qué PostgreSQL?
+
+Se eligió PostgreSQL como motor de base de datos por las siguientes razones:
+
+| Requisito | Beneficio de PostgreSQL |
+|---|---|
+| **ACID compliance** | Las transacciones financieras requieren atomicidad y consistencia. PostgreSQL garantiza que cada movimiento de dinero (ingreso, gasto, transferencia) se ejecute como una transacción atómica. |
+| **CHECK constraints** | Permite validar a nivel de base de datos que `balance >= 0` y `amount > 0`, evitando inconsistencias incluso si hay errores en la lógica de aplicación. |
+| **Integridad referencial** | Las claves foráneas entre wallets, transacciones, categorías y usuarios aseguran que no queden huérfanos. |
+| **Escalabilidad vertical** | PostgreSQL maneja eficientemente millones de registros con índices adecuados, siendo suficiente para un MVP. Una migración futura a sharding o read replicas es posible si se requiere escalabilidad horizontal. |
+
+### Estructura del modelo de datos
+
+El modelo se diseñó con 4 tablas principales y escalabilidad en mente:
+
+```
+┌─────────────┐     ┌─────────────────┐     ┌──────────────────┐
+│   users     │     │    wallets      │     │  transactions    │
+├─────────────┤     ├─────────────────┤     ├──────────────────┤
+│ id (UUID)   │←────│ user_id (FK)    │←────│ wallet_id (FK)   │
+│ name        │     │ id (UUID)       │     │ id (UUID)        │
+│ email (UQ)  │     │ name            │     │ amount (NUMERIC) │
+│ password_ha │     │ type (VARCHAR)  │     │ type (VARCHAR)   │
+│ created_at  │     │ balance(NUMERIC)│     │ category_id(FK)  │
+└─────────────┘     │ created_at      │     │ date             │
+                    │ updated_at      │     │ description      │
+                    └─────────────────┘     │ created_at       │
+                                            │ updated_at       │
+                                            └──────────────────┘
+                                                    │
+                                            ┌───────┴────────┐
+                                            │   categories   │
+                                            ├────────────────┤
+                                            │ id (UUID)      │
+                                            │ name           │
+                                            │ type (VARCHAR) │
+                                            │ icon           │
+                                            │ color          │
+                                            └────────────────┘
+```
+
+**Claves de escalabilidad:**
+- **UUIDs como identificadores**: Permiten generación distribuida sin conflictos y no exponen IDs secuenciales.
+- **NUMERIC(15,2) para montos**: Precisión exacta para operaciones financieras, sin errores de redondeo.
+- **Índices por wallet_id + fecha**: Optimizan las consultas de listado de transacciones, que son las más frecuentes.
+- **CHECK constraints**: `balance >= 0` y `amount > 0` como red de seguridad a nivel BD.
+- **Flyway migrations**: Las migraciones versionadas permiten evolucionar el esquema de forma controlada y reproducible en cualquier entorno.
+
 ---
 
 ## Stack Tecnológico
@@ -67,7 +119,6 @@ Sistema de gestión financiera con wallets, transacciones, categorías, autentic
 | Infraestructura | Docker Compose (3 servicios: postgres, backend, frontend) |
 | Tests Backend | JUnit 5, Mockito, JaCoCo (94% cobertura) |
 | Tests Frontend | Jasmine, Karma (86.76% cobertura) |
-
 ---
 
 ## Arquitectura
@@ -81,27 +132,26 @@ Sistema de gestión financiera con wallets, transacciones, categorías, autentic
 
 ## SDLC Workflow (Spec-Driven Development)
 
-El ciclo de vida de desarrollo se basó en SDD (Spec-Driven Development) con agentes de IA especializados:
+El ciclo de vida se basó en SDD (Spec-Driven Development) utilizando agentes de IA especializados del ecosistema [config-ai](https://github.com/cristiansrc/config-ai):
 
 ```
- 1. REQUISITOS      → requirements-analyst      → brief de requerimientos
+ 1. REQUISITOS      → requirements-analyst      → docs/requerimientos.pdf
  2. PLANIFICACIÓN   → planner                    → Master Spec + OpenAPI + Shared Context
- 3. VALIDACIÓN      → spec-validator / enterprise-spec-validator → veredicto "ready"
+ 3. VALIDACIÓN      → spec-validator             → 3 rondas, 12 findings corregidos
     ─── GATE HUMANO: Aprobación del plan ───
  4. DESCOMPOSICIÓN  → task-decomposer            → 44 tareas atómicas
  5. EJECUCIÓN BACKEND  → executor (T1-T28)       → 28 tareas
  6. EJECUCIÓN FRONTEND → executor (T29-T41)      → 13 tareas
- 7. EJECUCIÓN INFRA    → devops-architect (T42-T44) → 3 tareas
- 8. PRUEBAS         → test-architect             → 134 tests backend + 168 tests frontend
+ 7. EJECUCIÓN INFRA    → devops-architect(T42-T44)→ 3 tareas
+ 8. PRUEBAS         → test-architect             → 302 tests totales
  9. PRUEBAS FUNCIONALES → functional-test-planner → 25 escenarios E2E
-10. CORRECCIONES    → bug-fixing-workflow        → fixes iterativos
+10. CORRECCIONES    → bug-fixing-workflow        → 6 ciclos de fixes
     ─── GATE HUMANO: Aprobación QA ───
-11. COMMIT          → git-executor               → commit semántico
+11. COMMIT          → git-executor               → 3 commits semánticos
 ```
 
-Flujo real documentado en [desarrollo-log.md](./desarrollo-log.md).
+Flujo completo documentado en [desarrollo-log.md](./desarrollo-log.md).
 
----
 
 ## Skills utilizados (desde config-ai)
 
@@ -189,20 +239,80 @@ docker compose up -d
 
 ```
 NanoBankLedger-workspace/
-├── docs/
-│   ├── specs/                  # Master Spec, Shared Context, Task Board
-│   ├── api/                    # OpenAPI contract
-│   ├── architecture/           # ADRs, System Landscape, Context Map, Integration Map
-│   └── functional-testing/     # Plan de pruebas funcionales
-├── NanoBankLedger-backend/     # Spring Boot + Kotlin (Hexagonal)
-├── NanoBankLedger-frontend/    # Angular 17+ (Standalone + Signals)
-├── NanoBankLedger-infrastructure/  # Docker Compose + Nginx
-├── desarrollo-log.md           # Bitácora de desarrollo
-└── README.md
+│
+├── docs/                              # Documentación del proyecto
+│   ├── specs/                         # Especificaciones SDD
+│   │   ├── master-spec.md             # Spec maestro con modelo de datos, RN, contratos
+│   │   └── tasks/                     # Tablero de tareas del incremento
+│   ├── api/                           # Contrato OpenAPI 3.1
+│   │   └── openapi.yaml               # 16 endpoints, 4 tags
+│   ├── architecture/                  # Documentación arquitectónica
+│   │   ├── system-landscape.md        # C4 Level 1-2
+│   │   ├── context-map.md             # 4 Bounded Contexts
+│   │   ├── integration-map.md         # Integraciones entre BCs
+│   │   └── decision-records/          # ADRs (Monorepo, Hexagonal, JWT)
+│   └── functional-testing/            # Pruebas funcionales
+│       └── functional-test-plan.md    # 25 escenarios E2E
+│
+├── NanoBankLedger-backend/            # Backend Spring Boot + Kotlin
+│   ├── src/main/kotlin/               # Código fuente (Arquitectura Hexagonal)
+│   │   ├── domain/                    # Entidades puras, reglas de negocio
+│   │   ├── application/               # Puertos, DTOs, Use Cases
+│   │   └── infrastructure/            # REST controllers, JPA, Security, Config
+│   ├── src/main/resources/            # Configuración y migraciones Flyway
+│   └── src/test/                      # Tests (134 tests, 94% cobertura)
+│
+├── NanoBankLedger-frontend/           # Frontend Angular 17+
+│   ├── src/app/                       # Código fuente
+│   │   ├── core/                      # Servicios, modelos, guards, interceptors
+│   │   ├── features/                  # Módulos funcionales (auth, wallets, transactions, dashboard)
+│   │   └── shared/                    # Directivas compartidas (drag & drop)
+│   └── src/                           # Tests (168 tests, 86.76% cobertura)
+│
+├── NanoBankLedger-infrastructure/     # Infraestructura Docker
+│   ├── docker-compose/                # Docker Compose + Nginx config
+│   │   ├── docker-compose.yml         # 3 servicios: postgres, backend, frontend
+│   │   └── nginx.conf                 # Proxy reverso /api/ → backend
+│   └── scripts/                       # Scripts de base de datos
+│
+├── desarrollo-log.md                  # Bitácora completa de desarrollo
+└── README.md                          # Este archivo
 ```
 
 ---
 
-## Ecosistema de IA
+## OpenCode API - Plataforma de IA Multimodelo
 
-Este proyecto fue desarrollado utilizando el ecosistema [config-ai](https://github.com/cristiansrc/config-ai), un conjunto de agentes y skills de IA especializados para desarrollo dirigido por especificaciones. El orquestador principal (`master-orchestrator`) delegó tareas a agentes especializados siguiendo el flujo SDD con gates de validación humana.
+Este proyecto fue desarrollado utilizando [OpenCode](https://opencode.ai), una plataforma que unifica múltiples proveedores de IA en un solo lugar.
+
+### Ventajas de OpenCode API
+
+- **Multimodelo**: Acceso a Claude (Anthropic), ChatGPT (OpenAI), Gemini (Google), Qwen (Alibaba) y DeepSeek desde una misma interfaz.
+- **Facturación unificada**: Un solo proveedor para todos los modelos, sin necesidad de cuentas separadas.
+- **Modelos utilizados en este proyecto**:
+  - `opencode-go/deepseek-v4-flash` — Agentes de ejecución, documentación y orquestación
+  - `opencode-go/qwen3.7-plus` — Agentes de planificación, validación y revisión
+
+### Ecosistema de Desarrollo (config-ai)
+
+Este proyecto se desarrolló bajo el flujo **Spec-Driven Development (SDD)** utilizando el ecosistema de agentes y skills disponible en [config-ai](https://github.com/cristiansrc/config-ai).
+
+El ciclo de vida fue el siguiente:
+
+1. **Requerimientos** → Se analizó el PDF de requisitos
+2. **Planificación** → `planner` creó la Master Spec, contrato OpenAPI y Shared Context
+3. **Validación** → `spec-validator` revisó consistencia (3 rondas, 12 findings corregidos)
+4. **Aprobación humana** → Gate de validación del plan
+5. **Descomposición** → `task-decomposer` generó 44 tareas atómicas
+6. **Ejecución** → `executor` implementó backend (T1-T28), frontend (T29-T41) e infraestructura (T42-T44)
+7. **Pruebas** → `test-architect` generó 134 tests backend + 168 tests frontend
+8. **Correcciones** → Fixes iterativos: snake_case, sesión persistente, filtros, layout responsive
+9. **Commit** → `git-executor` realizó los commits semánticos
+
+### Agentes utilizados en esta sesión
+
+Ver sección [Agentes utilizados](#agentes-utilizados) para el listado detallado con enlaces a cada agente.
+
+### Skills utilizados en esta sesión
+
+Ver sección [Skills utilizados](#skills-utilizados-desde-config-ai) para el listado detallado con enlaces a cada skill.
