@@ -25,6 +25,7 @@ Sistema de gestión financiera con wallets, transacciones, categorías, autentic
 - [Métricas Finales](#métricas-finales)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Cómo Ejecutar](#cómo-ejecutar)
+> **🔗 Navegación del documento:** Este README contiene enlaces a lo largo de todo el documento. Los enlaces locales (ej: `[Stack Tecnológico](#stack-tecnológico)`) te llevan a secciones dentro de este mismo archivo. Los enlaces a archivos del proyecto (ej: `[desarrollo-log.md](./desarrollo-log.md)`) apuntan a artefactos dentro del repositorio. Los enlaces externos (ej: `[config-ai](https://github.com/cristiansrc/config-ai)`) te llevan a recursos fuera del proyecto. Todos los agentes, skills y artefactos mencionados tienen su enlace directo.
 
 ---
 
