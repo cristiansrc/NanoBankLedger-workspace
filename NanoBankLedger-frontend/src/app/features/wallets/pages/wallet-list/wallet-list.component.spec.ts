@@ -94,32 +94,30 @@ describe('WalletListComponent', () => {
     walletServiceSpy.delete.and.returnValue(of(void 0));
     walletServiceSpy.findAll.and.returnValue(of([]));
 
-    component.deleteWallet('1');
-    expect(walletServiceSpy.delete).toHaveBeenCalledWith('1');
+    component.deleteWallet(mockWallet);
+    expect(walletServiceSpy.delete).toHaveBeenCalledWith(mockWallet.id);
     expect(walletServiceSpy.findAll).toHaveBeenCalled();
   });
 
   it('should not delete wallet if confirm is cancelled', () => {
     spyOn(window, 'confirm').and.returnValue(false);
-    component.deleteWallet('1');
+    component.deleteWallet(mockWallet);
     expect(walletServiceSpy.delete).not.toHaveBeenCalled();
   });
 
-  it('should show alert on delete with 409 conflict', () => {
+  it('should set error on delete with 409 conflict', () => {
     spyOn(window, 'confirm').and.returnValue(true);
-    spyOn(window, 'alert');
     walletServiceSpy.delete.and.returnValue(throwError(() => ({ status: 409 })));
 
-    component.deleteWallet('1');
-    expect(window.alert).toHaveBeenCalledWith(jasmine.stringMatching(/transacciones/i));
+    component.deleteWallet(mockWallet);
+    expect(component.error()).toContain('transacciones');
   });
 
-  it('should show generic alert on delete error', () => {
+  it('should set generic error on delete failure', () => {
     spyOn(window, 'confirm').and.returnValue(true);
-    spyOn(window, 'alert');
     walletServiceSpy.delete.and.returnValue(throwError(() => ({ status: 500 })));
 
-    component.deleteWallet('1');
-    expect(window.alert).toHaveBeenCalledWith(jasmine.stringMatching(/Error al eliminar/i));
+    component.deleteWallet(mockWallet);
+    expect(component.error()).toContain('Error al eliminar');
   });
 });

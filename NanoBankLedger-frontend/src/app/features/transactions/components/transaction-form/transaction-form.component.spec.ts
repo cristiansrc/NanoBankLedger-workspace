@@ -115,10 +115,11 @@ describe('TransactionFormComponent', () => {
     expect(component.isFormValid).toBeFalse();
   });
 
-  it('should validate form - category is required', () => {
+  it('should be valid without category since category is optional', () => {
     component.amount = '50.00';
     component.selectedCategoryId = '';
-    expect(component.isFormValid).toBeFalse();
+    component.date = '2024-06-15';
+    expect(component.isFormValid).toBeTrue();
   });
 
   it('should validate form - date is required', () => {

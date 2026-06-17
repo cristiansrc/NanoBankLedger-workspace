@@ -7,6 +7,7 @@ import { Wallet } from '../../../../core/models/wallet.models';
 import { Transaction } from '../../../../core/models/transaction.models';
 import { Category } from '../../../../core/models/category.models';
 import { of, throwError } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 describe('TransactionListComponent', () => {
   let component: TransactionListComponent;
@@ -45,7 +46,8 @@ describe('TransactionListComponent', () => {
       providers: [
         { provide: TransactionService, useValue: transactionServiceSpy },
         { provide: WalletService, useValue: walletServiceSpy },
-        { provide: CategoryService, useValue: categoryServiceSpy }
+        { provide: CategoryService, useValue: categoryServiceSpy },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } }
       ]
     }).compileComponents();
 
