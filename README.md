@@ -281,6 +281,64 @@ NanoBankLedger-workspace/
 
 ---
 
+## Bitácora de Prompts
+
+Registro de los prompts clave utilizados durante el desarrollo del MVP:
+
+| # | Prompt | Agente | Propósito |
+|---|---|---|---|
+| 1 | *"Define alignment decisions for NanoBank Ledger MVP considering PostgreSQL vs NoSQL, Hexagonal Architecture, JWT rotation, monorepo structure, API-First, testing strategy, UI framework, deployment and migration strategy."* | master-orchestrator | Alineación inicial del proyecto (9 decisiones locked) |
+| 2 | *"Create Master Spec for NanoBank Ledger following spec-driven-development standard. Include: purpose, technical stack, architecture (Hexagonal), data model (PostgreSQL), business rules, API contracts (OpenAPI 3.1), security (JWT rotation), testing strategy (80% coverage), deployment (Docker Compose) and acceptance criteria."* | planner | Creación de la Master Spec |
+| 3 | *"Create OpenAPI 3.1 contract for NanoBank Ledger with 4 tags (Auth, Wallets, Transactions, Categories), 16 endpoints, snake_case, paginated responses, ApiErrorResponse contract and Bearer JWT security scheme."* | planner | Contrato OpenAPI |
+| 4 | *"Validate the complete spec artifact set (Master Spec, OpenAPI, Integration Map, Context Map) for ambiguity, inconsistency, architectural risk and missing constraints. Provide verdict and findings."* | spec-validator | Validación de especificaciones (3 rondas, 12 findings) |
+| 5 | *"Decompose the MVP increment into atomic engineering tasks with dependencies, acceptance criteria, file paths and verification steps."* | task-decomposer | Descomposición en 44 tareas |
+| 6 | *"Implement T1-T28: Spring Boot 3.4 + Kotlin 2.0 + Java 21 project with Hexagonal Architecture. Domain entities, application ports, adapters (JPA, REST, Security), Flyway migrations, JWT auth with rotation, Global Exception Handler."* | executor | Implementación del backend completo |
+| 7 | *"Implement T29-T41: Angular 17+ standalone components with Signals, lazy loading, auth interceptor, guards, wallet CRUD, transaction CRUD with filters, drag & drop with optimistic UI, minimalist UI theme."* | executor | Implementación del frontend completo |
+| 8 | *"Create T42-T44: Docker Compose with 3 services (postgres:16-alpine, backend Java 21, frontend Nginx), multi-stage Dockerfiles, nginx proxy config, DB init/reset scripts."* | devops-architect | Infraestructura Docker |
+| 9 | *"Generate test suites for all backend use cases and frontend services. Include unit tests, integration tests, edge cases (insufficient balance, same wallet move, ownership isolation). Minimum 80% coverage."* | test-architect | Generación de tests (302 tests totales) |
+| 10 | *"Fix: Frontend expecting PaginatedResponse but backend returns array. Error: Cannot read properties of undefined (reading 'length')."* | executor | Fix response type transactions |
+| 11 | *"Implement session persistence across tabs using localStorage. Handle 403 errors. Validate JWT expiration on app initialization."* | executor | Sesión persistente + validación JWT |
+| 12 | *"Redesign layout: sidebar with navigation on desktop, hamburger menu on mobile. Move logout below Transactions. Align brand with sidebar."* | executor | Layout responsive con sidebar |
+
+---
+
+## Criterio Senior
+
+Durante el desarrollo, varias sugerencias de la IA fueron modificadas o rechazadas por no cumplir con principios SOLID, ser ineficientes o no alinearse con los requisitos. A continuación se documentan las decisiones más relevantes:
+
+### Decisiones donde se corrigió/modificó a la IA
+
+| # | Sugerencia de la IA | Decisión tomada | Justificación |
+|---|---|---|---|
+| 1 | **Arquitectura pragmática** (mezclar capas) | **Hexagonal puro** (Ports & Adapters) | Se insistió en separación estricta de capas: dominio puro sin dependencias de frameworks, aplicando SOLID correctamente. El dominio no debe importar Spring, JPA ni HTTP. |
+| 2 | **PUT para actualizaciones** | **PATCH** | La IA sugirió PUT para actualizar wallets/transactions. Se corrigió a PATCH por semántica REST correcta (actualización parcial, no reemplazo completo). |
+| 3 | **Endpoint `/transfer`** | **`/move`** | La IA propuso `/api/v1/transactions/{id}/transfer`. Se cambió a `/move` por ser el término del lenguaje ubicuo del dominio. |
+| 4 | **camelCase en JSON** | **snake_case** | La IA usó camelCase en los DTOs. Se configuró Jackson con `SNAKE_CASE` global y se actualizó todo el frontend para cumplir con el contrato OpenAPI y el estándar REST. |
+| 5 | **Soft delete para entidades** | **DELETE físico con CASCADE** | La IA sugirió soft delete con `deleted_at`. Se optó por DELETE físico para simplificar el MVP. Se documentó como decisión a revisar si se requiere auditoría. |
+| 6 | **Tokens en localStorage** | **Tokens en Signals (memoria) + localStorage** | La IA sugirió localStorage únicamente. Se implementó almacenamiento dual: Signals para reactividad y localStorage para persistencia entre pestañas, con validación de expiración JWT al cargar. |
+| 7 | **Idempotency-Key en transacciones** | **Eliminado** | La IA sugirió header `Idempotency-Key` para POST. Se eliminó por complejidad innecesaria para el MVP; no hay casos de uso que lo requieran. |
+| 8 | **CRUD completo de categorías** | **Solo lectura** | La IA generó endpoints POST/PUT/DELETE para categorías. Se corrigió a solo GET, ya que las categorías son predefinidas del sistema (seed data). |
+| 9 | **PaginatedResponse en backend** | **Lista plana** | La IA diseñó paginación en el backend pero no la implementó. Se ajustó el frontend para recibir array plano hasta que se implemente paginación real. |
+| 10 | **Filtro por type como String** | **Enum TransactionType** | La IA pasaba `type` como String a la JPQL causando error 500. Se corrigió tipando como `TransactionType` enum en toda la cadena: controller → use case → repository. |
+
+### Patrones de diseño aplicados correctamente (sin corrección)
+
+| Patrón | Ubicación | Beneficio |
+|---|---|---|
+| **Global Exception Handler** | Backend (15 handlers) | Errores consistentes con código estable, trazabilidad vía trace_id |
+| **DTOs en todas las capas** | Backend (request/response) | Aislamiento entre dominio y transporte |
+| **Optimistic UI** | Frontend (drag & drop) | Feedback instantáneo con rollback automático |
+| **Signals + Computed** | Frontend (estado reactivo) | Rendimiento y detección de cambios precisa |
+| **JWT Rotation + Theft Detection** | Backend (Auth) | Seguridad: si un refresh token se reusa, toda la familia se invalida |
+
+### Lecciones aprendidas
+
+- **El 100% de los hallazgos del spec-validator (12 findings) fueron corregidos antes de escribir código**, lo que demuestra la efectividad del flujo SDD con gates de validación temprana.
+- **3 de los 6 bugs detectados en pruebas fueron causados por desincronización entre capas** (frontend esperando PaginatedResponse, query params en camelCase, type como String vs enum), lo que refuerza la importancia de mantener contratos consistentes.
+- **El uso de IA generativa aceleró el desarrollo ~3x**, pero cada sugerencia fue revisada y ajustada con criterio senior, especialmente en decisiones de arquitectura y seguridad.
+
+---
+
 ## OpenCode API - Plataforma de IA Multimodelo
 
 Este proyecto fue desarrollado utilizando [OpenCode](https://opencode.ai), una plataforma que unifica múltiples proveedores de IA en un solo lugar.
