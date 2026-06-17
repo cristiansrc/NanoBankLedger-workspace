@@ -29,7 +29,6 @@ Thumbs.db
 
 # Logs
 *.log
-desarrollo-log.md
 
 # Puppeteer / Chrome
 chrome/
