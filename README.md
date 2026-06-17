@@ -239,6 +239,9 @@ Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 
 ## Bitácora de Prompts
 
+> **📖 Para revisar el proceso completo:** El archivo [desarrollo-log.md](./desarrollo-log.md) contiene el registro detallado de todas las interacciones entre el agente `master-orchestrator`, los agentes especializados y Cristhiam Reina. Allí encontrarás el prompt inicial de alineación, cada una de las 44 tareas ejecutadas, los 6 ciclos de corrección y las decisiones tomadas durante todo el desarrollo del MVP.
+
+
 Registro de los prompts clave utilizados durante el desarrollo del MVP:
 
 | # | Prompt | Agente | Propósito |
