@@ -1,0 +1,109 @@
+<div class="modal-overlay" (click)="close.emit()"></div>
+<div class="modal card" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <h2>{{ isEditMode ? 'Editar Transacción' : 'Nueva Transacción' }}</h2>
+    <button class="btn-close" (click)="close.emit()">&times;</button>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="modal-body">
+    <!-- Type Toggle -->
+    <div class="field">
+      <label>Tipo</label>
+      <div class="type-toggle">
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="type === 'EXPENSE'"
+          [class.toggle-expense]="type === 'EXPENSE'"
+          (click)="onTypeChange('EXPENSE')"
+        >
+          Gasto
+        </button>
+        <button
+          type="button"
+          class="toggle-btn"
+          [class.active]="type === 'INCOME'"
+          [class.toggle-income]="type === 'INCOME'"
+          (click)="onTypeChange('INCOME')"
+        >
+          Ingreso
+        </button>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div class="field">
+      <label for="category">Categoría</label>
+      <select
+        id="category"
+        class="input"
+        [(ngModel)]="selectedCategoryId"
+        name="category"
+      >
+        <option value="">Sin categoría</option>
+        <option *ngFor="let cat of filteredCategories" [value]="cat.id">
+          {{ cat.icon ? cat.icon + ' ' : '' }}{{ cat.name }}
+        </option>
+      </select>
+      <p *ngIf="filteredCategories.length === 0" class="field-hint">No hay categorías disponibles para este tipo.</p>
+    </div>
+
+    <!-- Amount -->
+    <div class="field">
+      <label for="amount">Monto</label>
+      <input
+        id="amount"
+        type="number"
+        class="input"
+        step="0.01"
+        min="0.01"
+        placeholder="0.00"
+        [(ngModel)]="amount"
+        name="amount"
+        required
+      />
+      <p *ngIf="amountError" class="field-error">{{ amountError }}</p>
+    </div>
+
+    <!-- Description -->
+    <div class="field">
+      <label for="description">Descripción (opcional)</label>
+      <textarea
+        id="description"
+        class="input textarea"
+        rows="2"
+        placeholder="Descripción de la transacción..."
+        [(ngModel)]="description"
+        name="description"
+      ></textarea>
+    </div>
+
+    <!-- Date -->
+    <div class="field">
+      <label for="date">Fecha</label>
+      <input
+        id="date"
+        type="date"
+        class="input"
+        [(ngModel)]="date"
+        name="date"
+        required
+      />
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="submitError()" class="error-message">{{ submitError() }}</div>
+
+    <!-- Actions -->
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" (click)="close.emit()">Cancelar</button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="saving() || !isFormValid"
+      >
+        {{ saving() ? 'Guardando...' : (isEditMode ? 'Guardar Cambios' : 'Crear Transacción') }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,10 @@
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+.modal { width: 100%; max-width: 480px; padding: 0; overflow: hidden; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 24px 0; }
+.modal-header h2 { font-size: 20px; }
+.btn-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--color-text-secondary); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.error-message { color: var(--color-red-text); background: var(--color-red-bg); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; }

@@ -1,0 +1,49 @@
+<div class="page-container">
+  <div class="breadcrumbs">
+    <span class="breadcrumb-current">Dashboard</span>
+  </div>
+
+  <div class="page-header">
+    <h1>Dashboard</h1>
+  </div>
+
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando resumen...</p>
+  </div>
+
+  <div *ngIf="!loading()">
+    <div class="summary-grid">
+      <div class="summary-card card">
+        <p class="summary-label">Saldo Total</p>
+        <p class="summary-value total">${{ formatBalance(totalBalance()) }}</p>
+      </div>
+      <div class="summary-card card">
+        <p class="summary-label">Billeteras</p>
+        <p class="summary-value">{{ wallets().length }}</p>
+      </div>
+      <div class="summary-card card">
+        <p class="summary-label">Tipo mas usado</p>
+        <p class="summary-value">{{ mostUsedType() }}</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">Tus Billeteras</h2>
+
+    <div *ngIf="wallets().length === 0" class="empty-state card">
+      <p>Aun no tienes billeteras.</p>
+      <a routerLink="/wallets" class="btn btn-primary">Crear Billetera</a>
+    </div>
+
+    <div *ngIf="wallets().length > 0" class="wallet-mini-grid">
+      <div *ngFor="let wallet of wallets(); trackBy: trackById" class="wallet-mini-card card">
+        <div class="wallet-mini-header">
+          <span class="wallet-type-badge type-{{ wallet.type.toLowerCase() }}">{{ wallet.type }}</span>
+        </div>
+        <h3>{{ wallet.name }}</h3>
+        <p class="wallet-mini-balance">${{ formatBalance(wallet.balance) }}</p>
+        <a [routerLink]="['/wallets', wallet.id, 'transactions']" class="wallet-link">Ver movimientos &rarr;</a>
+      </div>
+    </div>
+  </div>
+</div>

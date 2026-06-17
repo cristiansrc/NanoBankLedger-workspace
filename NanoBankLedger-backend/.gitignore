@@ -1,0 +1,20 @@
+build/
+.gradle/
+*.class
+*.jar
+*.war
+!gradle/wrapper/gradle-wrapper.jar
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.settings/
+.project
+.classpath
+bin/
+.DS_Store
+
+# Local config overrides
+application-local.yaml
+application-local.properties

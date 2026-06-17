@@ -1,0 +1,1462 @@
+openapi: 3.1.0
+info:
+  title: NanoBank Ledger API
+  version: 1.0.0
+  description: |
+    API REST para el sistema de gestión financiera personal NanoBank Ledger.
+    
+    Permite a los usuarios administrar billeteras virtuales, registrar transacciones
+    de ingresos y gastos, categorizar movimientos y visualizar dashboards con filtros
+    en tiempo real. Soporta drag & drop de transacciones entre billeteras con
+    actualización atómica de saldos.
+    
+    ## Autenticación
+    - Endpoints públicos: `/api/v1/auth/register`, `/api/v1/auth/login`
+    - Endpoints protegidos: Todos los demás requieren `Authorization: Bearer <access_token>`
+    - Refresh: `POST /api/v1/auth/refresh` con refresh_token en body
+    
+    ## Convenciones
+    - Todos los campos JSON usan `snake_case`
+    - Identificadores públicos son UUIDs
+    - Paginación 0-indexed con `page`, `size`, `total_elements`, `total_pages`, `content`
+    - Errores siguen el schema `ApiErrorResponse`
+  contact:
+    name: NanoBank Ledger Team
+
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo local
+  - url: http://localhost:4200/api
+    description: Frontend proxy (desarrollo)
+
+tags:
+  - name: Auth
+    description: Autenticación y autorización (registro, login, refresh, logout)
+  - name: Wallets
+    description: Gestión de billeteras virtuales (crear, listar, editar, eliminar)
+  - name: Transactions
+    description: Gestión de transacciones (ingresos, gastos, drag & drop entre billeteras)
+  - name: Categories
+    description: Catálogo de categorías para clasificar transacciones
+
+security:
+  - BearerJWT: []
+
+paths:
+  # ============================================================
+  # AUTH — Público (sin autenticación)
+  # ============================================================
+  /api/v1/auth/register:
+    post:
+      operationId: register
+      tags: [Auth]
+      summary: Registrar nuevo usuario
+      description: |
+        Crea una nueva cuenta de usuario con email y password.
+        El email debe ser único. La contraseña se almacena hasheada con BCrypt.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: "Juan Pérez"
+              email: "juan@ejemplo.com"
+              password: "MiPassword123!"
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "Juan Pérez"
+                email: "juan@ejemplo.com"
+                created_at: "2026-06-16T10:00:00Z"
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                example: "/api/v1/auth/register/550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Request inválido (campos faltantes o formato incorrecto)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 400
+                error: "Bad Request"
+                code: "VALIDATION_ERROR"
+                message: "The request contains invalid fields."
+                path: "/api/v1/auth/register"
+                trace_id: "trace-abc-123"
+                details:
+                  - field: "email"
+                    code: "FIELD_INVALID"
+                    message: "Must be a valid email address."
+                    rejected_value: "not-an-email"
+        '409':
+          description: Email ya registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 409
+                error: "Conflict"
+                code: "EMAIL_ALREADY_REGISTERED"
+                message: "A user with this email address already exists."
+                path: "/api/v1/auth/register"
+                trace_id: "trace-def-456"
+                details: []
+
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      summary: Iniciar sesión
+      description: |
+        Autentica al usuario con email y password. Retorna un par de tokens:
+        Access Token (JWT, 15 min) y Refresh Token (UUID, 7 días).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "juan@ejemplo.com"
+              password: "MiPassword123!"
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6Imp1YW5AZWplbXBsby5jb20iLCJpYXQiOjE3MTg1MzkyMDAsImV4cCI6MTcxODU0MDEwMH0.signature"
+                refresh_token: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                token_type: "Bearer"
+                expires_in: 900
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 401
+                error: "Unauthorized"
+                code: "INVALID_CREDENTIALS"
+                message: "The email or password is incorrect."
+                path: "/api/v1/auth/login"
+                trace_id: "trace-ghi-789"
+                details: []
+
+  /api/v1/auth/refresh:
+    post:
+      operationId: refresh
+      tags: [Auth]
+      summary: Refrescar access token
+      description: |
+        Renueva el access token usando un refresh token válido.
+        Implementa rotación: el refresh token usado se invalida y se emite uno nuevo.
+        Si se detecta reutilización de un token ya usado, se revoca toda la familia.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refresh_token: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        '200':
+          description: Tokens renovados exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.newtoken.signature"
+                refresh_token: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                token_type: "Bearer"
+                expires_in: 900
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: Refresh token inválido, expirado, revocado o familia revocada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                expired:
+                  summary: Token expirado
+                  value:
+                    timestamp: "2026-06-16T10:00:00Z"
+                    status: 401
+                    error: "Unauthorized"
+                    code: "REFRESH_TOKEN_EXPIRED"
+                    message: "The refresh token has expired."
+                    path: "/api/v1/auth/refresh"
+                    trace_id: "trace-jkl-012"
+                    details: []
+                revoked:
+                  summary: Token revocado
+                  value:
+                    timestamp: "2026-06-16T10:00:00Z"
+                    status: 401
+                    error: "Unauthorized"
+                    code: "REFRESH_TOKEN_REVOKED"
+                    message: "The refresh token has been revoked."
+                    path: "/api/v1/auth/refresh"
+                    trace_id: "trace-mno-345"
+                    details: []
+                family_revoked:
+                  summary: Familia revocada (detección de robo)
+                  value:
+                    timestamp: "2026-06-16T10:00:00Z"
+                    status: 401
+                    error: "Unauthorized"
+                    code: "TOKEN_FAMILY_REVOKED"
+                    message: "The token family has been revoked due to suspected theft. Please login again."
+                    path: "/api/v1/auth/refresh"
+                    trace_id: "trace-pqr-678"
+                    details: []
+
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      tags: [Auth]
+      summary: Cerrar sesión
+      description: |
+        Invalida el refresh token activo del usuario. El access token sigue siendo
+        válido hasta su expiración natural, pero sin refresh token no se puede renovar.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+            example:
+              refresh_token: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        '204':
+          description: Logout exitoso (sin contenido)
+        '401':
+          description: No autenticado o token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  # ============================================================
+  # WALLETS — Protegido (JWT Bearer)
+  # ============================================================
+  /api/v1/wallets:
+    get:
+      operationId: listWallets
+      tags: [Wallets]
+      summary: Listar billeteras del usuario autenticado
+      description: |
+        Retorna todas las billeteras activas del usuario autenticado,
+        ordenadas por fecha de creación descendente.
+      responses:
+        '200':
+          description: Lista de billeteras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WalletResponse'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  user_id: "440e8400-e29b-41d4-a716-446655440000"
+                  name: "Billetera Principal"
+                  type: "CHECKING"
+                  balance: "150000.00"
+                  created_at: "2026-06-01T10:00:00Z"
+                  updated_at: "2026-06-15T14:30:00Z"
+                - id: "660e8400-e29b-41d4-a716-446655440000"
+                  user_id: "440e8400-e29b-41d4-a716-446655440000"
+                  name: "Ahorro"
+                  type: "SAVINGS"
+                  balance: "500000.00"
+                  created_at: "2026-06-05T08:00:00Z"
+                  updated_at: "2026-06-14T09:00:00Z"
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+    post:
+      operationId: createWallet
+      tags: [Wallets]
+      summary: Crear nueva billetera
+      description: |
+        Crea una nueva billetera para el usuario autenticado.
+        El nombre debe ser único dentro de las billeteras del usuario.
+        El saldo inicial se establece en el campo `initial_balance` del request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletRequest'
+            example:
+              name: "Billetera Principal"
+              type: "CHECKING"
+              initial_balance: "100000.00"
+      responses:
+        '201':
+          description: Billetera creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                user_id: "440e8400-e29b-41d4-a716-446655440000"
+                name: "Billetera Principal"
+                type: "CHECKING"
+                balance: "100000.00"
+                created_at: "2026-06-16T10:00:00Z"
+                updated_at: "2026-06-16T10:00:00Z"
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                example: "/api/v1/wallets/550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Nombre de billetera duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 409
+                error: "Conflict"
+                code: "WALLET_NAME_DUPLICATED"
+                message: "A wallet with this name already exists for this user."
+                path: "/api/v1/wallets"
+                trace_id: "trace-stu-901"
+                details: []
+
+  /api/v1/wallets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID de la billetera
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getWallet
+      tags: [Wallets]
+      summary: Obtener detalle de billetera
+      description: Retorna el detalle completo de una billetera, incluyendo su saldo actual.
+      responses:
+        '200':
+          description: Detalle de la billetera
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Billetera no encontrada o no pertenece al usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 404
+                error: "Not Found"
+                code: "WALLET_NOT_FOUND"
+                message: "The requested wallet was not found."
+                path: "/api/v1/wallets/550e8400-e29b-41d4-a716-446655440000"
+                trace_id: "trace-vwx-234"
+                details: []
+
+    patch:
+      operationId: updateWallet
+      tags: [Wallets]
+      summary: Actualizar billetera
+      description: |
+        Actualización parcial de una billetera. Solo se pueden modificar
+        el nombre y el tipo. El saldo NO se puede modificar directamente
+        (se actualiza mediante transacciones).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletRequest'
+            example:
+              name: "Billetera Principal Actualizada"
+              type: "SAVINGS"
+      responses:
+        '200':
+          description: Billetera actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Billetera no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Nombre duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+    delete:
+      operationId: deleteWallet
+      tags: [Wallets]
+      summary: Eliminar billetera
+      description: |
+        Elimina una billetera. Solo se puede eliminar si no tiene transacciones asociadas.
+        Si tiene transacciones, retorna 409 WALLET_HAS_TRANSACTIONS.
+      responses:
+        '204':
+          description: Billetera eliminada (sin contenido)
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Billetera no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: La billetera tiene transacciones asociadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 409
+                error: "Conflict"
+                code: "WALLET_HAS_TRANSACTIONS"
+                message: "Cannot delete a wallet that has associated transactions."
+                path: "/api/v1/wallets/550e8400-e29b-41d4-a716-446655440000"
+                trace_id: "trace-yza-567"
+                details: []
+
+  # ============================================================
+  # TRANSACTIONS — Protegido (JWT Bearer)
+  # ============================================================
+  /api/v1/wallets/{walletId}/transactions:
+    parameters:
+      - name: walletId
+        in: path
+        required: true
+        description: UUID de la billetera
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listTransactions
+      tags: [Transactions]
+      summary: Listar transacciones de una billetera
+      description: |
+        Retorna las transacciones de una billetera con filtros opcionales
+        y paginación. Ordenadas por fecha descendente, luego por created_at descendente.
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          description: Filtrar por categoría
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          required: false
+          description: Fecha inicio (inclusive, formato ISO 8601 date)
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: date_to
+          in: query
+          required: false
+          description: Fecha fin (inclusive, formato ISO 8601 date)
+          schema:
+            type: string
+            format: date
+            example: "2026-06-30"
+        - name: type
+          in: query
+          required: false
+          description: Filtrar por tipo de transacción
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+        - name: page
+          in: query
+          required: false
+          description: Número de página (0-indexed)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Tamaño de página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Lista paginada de transacciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionResponse'
+              example:
+                content:
+                  - id: "770e8400-e29b-41d4-a716-446655440000"
+                    wallet_id: "550e8400-e29b-41d4-a716-446655440000"
+                    category_id: "880e8400-e29b-41d4-a716-446655440000"
+                    type: "INCOME"
+                    amount: "50000.00"
+                    description: "Salario mensual"
+                    date: "2026-06-15"
+                    created_at: "2026-06-15T10:00:00Z"
+                    updated_at: "2026-06-15T10:00:00Z"
+                page: 0
+                size: 20
+                total_elements: 1
+                total_pages: 1
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Billetera no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+    post:
+      operationId: createTransaction
+      tags: [Transactions]
+      summary: Crear transacción
+      description: |
+        Registra una nueva transacción (ingreso o gasto) en la billetera especificada.
+        - Si es INCOME: el saldo de la billetera se incrementa.
+        - Si es EXPENSE: el saldo de la billetera se decrementa.
+        - Si el gasto causaría saldo negativo, se rechaza con 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+            example:
+              category_id: "880e8400-e29b-41d4-a716-446655440000"
+              type: "INCOME"
+              amount: "50000.00"
+              description: "Salario mensual"
+              date: "2026-06-15"
+      responses:
+        '201':
+          description: Transacción creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+              example:
+                id: "770e8400-e29b-41d4-a716-446655440000"
+                wallet_id: "550e8400-e29b-41d4-a716-446655440000"
+                category_id: "880e8400-e29b-41d4-a716-446655440000"
+                type: "INCOME"
+                amount: "50000.00"
+                description: "Salario mensual"
+                date: "2026-06-15"
+                created_at: "2026-06-15T10:00:00Z"
+                updated_at: "2026-06-15T10:00:00Z"
+          headers:
+            Location:
+              description: URL del recurso creado
+              schema:
+                type: string
+                example: "/api/v1/transactions/770e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Billetera o categoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: Regla de negocio violada (saldo insuficiente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 422
+                error: "Unprocessable Entity"
+                code: "WALLET_INSUFFICIENT_BALANCE"
+                message: "The wallet does not have sufficient balance for this operation."
+                path: "/api/v1/wallets/550e8400-e29b-41d4-a716-446655440000/transactions"
+                trace_id: "trace-bcd-890"
+                details: []
+
+  /api/v1/transactions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID de la transacción
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTransaction
+      tags: [Transactions]
+      summary: Obtener detalle de transacción
+      description: Retorna el detalle completo de una transacción.
+      responses:
+        '200':
+          description: Detalle de la transacción
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Transacción no encontrada o no pertenece al usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 404
+                error: "Not Found"
+                code: "TRANSACTION_NOT_FOUND"
+                message: "The requested transaction was not found."
+                path: "/api/v1/transactions/770e8400-e29b-41d4-a716-446655440000"
+                trace_id: "trace-efg-123"
+                details: []
+
+    patch:
+      operationId: updateTransaction
+      tags: [Transactions]
+      summary: Actualizar transacción
+      description: |
+        Actualización parcial de una transacción. Si se modifica el monto o el tipo,
+        se recalcula el efecto sobre el saldo de la billetera (revertir efecto anterior
+        + aplicar nuevo efecto).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+            example:
+              amount: "55000.00"
+              description: "Salario mensual (actualizado)"
+      responses:
+        '200':
+          description: Transacción actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: Regla de negocio violada (ej: saldo insuficiente tras recálculo)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+    delete:
+      operationId: deleteTransaction
+      tags: [Transactions]
+      summary: Eliminar transacción
+      description: |
+        Elimina una transacción y revierte su efecto sobre el saldo de la billetera.
+        - Si era INCOME: el saldo se decrementa.
+        - Si era EXPENSE: el saldo se incrementa.
+      responses:
+        '204':
+          description: Transacción eliminada (sin contenido)
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /api/v1/transactions/{id}/move:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID de la transacción a mover
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: moveTransaction
+      tags: [Transactions]
+      summary: Mover transacción a otra billetera (Drag & Drop)
+      description: |
+        Mueve una transacción de su billetera actual a una billetera destino.
+        Actualiza atómicamente los saldos de ambas billeteras:
+        - Billetera origen: saldo -= amount (si INCOME) o saldo += amount (si EXPENSE)
+        - Billetera destino: saldo += amount (si INCOME) o saldo -= amount (si EXPENSE)
+        
+        Si la billetera destino tendría saldo negativo, se rechaza con 422.
+        Toda la operación es transaccional (ACID): si cualquier paso falla, se hace ROLLBACK.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveTransactionRequest'
+            example:
+              target_wallet_id: "660e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Transacción movida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveTransactionResponse'
+              example:
+                transaction:
+                  id: "770e8400-e29b-41d4-a716-446655440000"
+                  wallet_id: "660e8400-e29b-41d4-a716-446655440000"
+                  category_id: "880e8400-e29b-41d4-a716-446655440000"
+                  type: "INCOME"
+                  amount: "50000.00"
+                  description: "Salario mensual"
+                  date: "2026-06-15"
+                  created_at: "2026-06-15T10:00:00Z"
+                  updated_at: "2026-06-16T10:30:00Z"
+                source_wallet:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "Billetera Principal"
+                  balance: "100000.00"
+                target_wallet:
+                  id: "660e8400-e29b-41d4-a716-446655440000"
+                  name: "Ahorro"
+                  balance: "550000.00"
+        '400':
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Transacción o billetera destino no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Misma billetera origen y destino
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 409
+                error: "Conflict"
+                code: "TRANSFER_SAME_WALLET"
+                message: "Cannot move a transaction to the same wallet."
+                path: "/api/v1/transactions/770e8400-e29b-41d4-a716-446655440000/move"
+                trace_id: "trace-hij-456"
+                details: []
+        '422':
+          description: La billetera destino tendría saldo negativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                timestamp: "2026-06-16T10:00:00Z"
+                status: 422
+                error: "Unprocessable Entity"
+                code: "WALLET_INSUFFICIENT_BALANCE"
+                message: "The target wallet would have a negative balance after this operation."
+                path: "/api/v1/transactions/770e8400-e29b-41d4-a716-446655440000/move"
+                trace_id: "trace-klm-789"
+                details: []
+
+  # ============================================================
+  # CATEGORIES — Protegido (JWT Bearer)
+  # ============================================================
+  /api/v1/categories:
+    get:
+      operationId: listCategories
+      tags: [Categories]
+      summary: Listar categorías disponibles
+      description: |
+        Retorna todas las categorías del sistema disponibles para clasificar
+        transacciones. Incluye categorías de INCOME y EXPENSE.
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+              example:
+                - id: "880e8400-e29b-41d4-a716-446655440000"
+                  name: "Salario"
+                  type: "INCOME"
+                  icon: "briefcase"
+                  color: "#4CAF50"
+                - id: "990e8400-e29b-41d4-a716-446655440000"
+                  name: "Alimentación"
+                  type: "EXPENSE"
+                  icon: "utensils"
+                  color: "#FF5733"
+                - id: "aa0e8400-e29b-41d4-a716-446655440000"
+                  name: "Transporte"
+                  type: "EXPENSE"
+                  icon: "car"
+                  color: "#3498DB"
+                - id: "bb0e8400-e29b-41d4-a716-446655440000"
+                  name: "Entretenimiento"
+                  type: "EXPENSE"
+                  icon: "film"
+                  color: "#9B59B6"
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+# ============================================================
+# COMPONENTS
+# ============================================================
+components:
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Access Token obtenido vía `/api/v1/auth/login` o `/api/v1/auth/refresh`.
+        Incluir en el header `Authorization: Bearer <access_token>`.
+
+  schemas:
+    # ----------------------------------------------------------
+    # AUTH SCHEMAS
+    # ----------------------------------------------------------
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nombre completo del usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Email único para login
+          example: "juan@ejemplo.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: Contraseña (se almacena hasheada con BCrypt)
+          format: password
+          example: "MiPassword123!"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "juan@ejemplo.com"
+        password:
+          type: string
+          description: Contraseña del usuario
+          format: password
+          example: "MiPassword123!"
+
+    LoginResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: JWT Access Token (15 minutos de validez)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          format: uuid
+          description: Refresh Token (7 días de validez, rotativo)
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        token_type:
+          type: string
+          description: Tipo de token (siempre "Bearer")
+          enum: ["Bearer"]
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Tiempo de expiración del access token en segundos
+          example: 900
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          format: uuid
+          description: Refresh Token a renovar
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    RefreshResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: Nuevo JWT Access Token
+        refresh_token:
+          type: string
+          format: uuid
+          description: Nuevo Refresh Token (el anterior se invalida)
+        token_type:
+          type: string
+          enum: ["Bearer"]
+        expires_in:
+          type: integer
+          description: Tiempo de expiración del access token en segundos
+          example: 900
+
+    LogoutRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          format: uuid
+          description: Refresh Token a invalidar (opcional; si no se envía, se invalida el último activo)
+
+    UserResponse:
+      type: object
+      required: [id, name, email, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID del usuario
+        name:
+          type: string
+          description: Nombre completo
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación de la cuenta
+
+    # ----------------------------------------------------------
+    # WALLET SCHEMAS
+    # ----------------------------------------------------------
+    WalletType:
+      type: string
+      enum: [CHECKING, SAVINGS, CASH, CREDIT]
+      description: |
+        Tipo de billetera:
+        - CHECKING: Cuenta corriente
+        - SAVINGS: Cuenta de ahorros
+        - CASH: Efectivo
+        - CREDIT: Tarjeta de crédito
+
+    CreateWalletRequest:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nombre de la billetera (único por usuario)
+          example: "Billetera Principal"
+        type:
+          $ref: '#/components/schemas/WalletType'
+        initial_balance:
+          type: string
+          format: decimal
+          pattern: '^\d+(\.\d{1,2})?$'
+          default: "0.00"
+          description: Saldo inicial de la billetera (default 0.00)
+          example: "100000.00"
+
+    UpdateWalletRequest:
+      type: object
+      description: Actualización parcial — solo los campos enviados se modifican
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nuevo nombre de la billetera
+        type:
+          $ref: '#/components/schemas/WalletType'
+
+    WalletResponse:
+      type: object
+      required: [id, user_id, name, type, balance, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID de la billetera
+        user_id:
+          type: string
+          format: uuid
+          description: UUID del propietario
+        name:
+          type: string
+          description: Nombre de la billetera
+        type:
+          $ref: '#/components/schemas/WalletType'
+        balance:
+          type: string
+          format: decimal
+          description: Saldo actual de la billetera (NUMERIC como string para precisión)
+          example: "150000.00"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+
+    # ----------------------------------------------------------
+    # TRANSACTION SCHEMAS
+    # ----------------------------------------------------------
+    TransactionType:
+      type: string
+      enum: [INCOME, EXPENSE]
+      description: |
+        Tipo de transacción:
+        - INCOME: Ingreso (incrementa el saldo)
+        - EXPENSE: Gasto (decrementa el saldo)
+
+    CreateTransactionRequest:
+      type: object
+      required: [category_id, type, amount, date]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          description: UUID de la categoría
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        amount:
+          type: string
+          format: decimal
+          pattern: '^(?!0+(\.0{1,2})?$)\d+(\.\d{1,2})?$'
+          minimum: 0.01
+          description: Monto de la transacción (siempre positivo, mayor a cero; el tipo indica la dirección). RN-003: amount > 0.
+          example: "50000.00"
+        description:
+          type: string
+          maxLength: 500
+          description: Descripción libre de la transacción
+          example: "Salario mensual"
+        date:
+          type: string
+          format: date
+          description: Fecha de la transacción
+          example: "2026-06-15"
+
+    UpdateTransactionRequest:
+      type: object
+      description: Actualización parcial — solo los campos enviados se modifican
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          description: Nueva categoría
+        amount:
+          type: string
+          format: decimal
+          pattern: '^(?!0+(\.0{1,2})?$)\d+(\.\d{1,2})?$'
+          minimum: 0.01
+          description: Nuevo monto (siempre positivo, mayor a cero). RN-003: amount > 0.
+        description:
+          type: string
+          maxLength: 500
+          description: Nueva descripción
+        date:
+          type: string
+          format: date
+          description: Nueva fecha
+
+    TransactionResponse:
+      type: object
+      required: [id, wallet_id, category_id, type, amount, date, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID de la transacción
+        wallet_id:
+          type: string
+          format: uuid
+          description: UUID de la billetera asociada
+        category_id:
+          type: string
+          format: uuid
+          description: UUID de la categoría
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        amount:
+          type: string
+          format: decimal
+          description: Monto de la transacción (siempre positivo)
+          example: "50000.00"
+        description:
+          type: string
+          nullable: true
+          description: Descripción de la transacción (puede ser nulo)
+        date:
+          type: string
+          format: date
+          description: Fecha de la transacción
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del registro
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+
+    MoveTransactionRequest:
+      type: object
+      required: [target_wallet_id]
+      properties:
+        target_wallet_id:
+          type: string
+          format: uuid
+          description: UUID de la billetera destino
+          example: "660e8400-e29b-41d4-a716-446655440000"
+
+    MoveTransactionResponse:
+      type: object
+      required: [transaction, source_wallet, target_wallet]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/TransactionResponse'
+        source_wallet:
+          type: object
+          required: [id, name, balance]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: UUID de la billetera origen
+            name:
+              type: string
+              description: Nombre de la billetera origen
+            balance:
+              type: string
+              format: decimal
+              description: Saldo actualizado de la billetera origen
+              example: "100000.00"
+        target_wallet:
+          type: object
+          required: [id, name, balance]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: UUID de la billetera destino
+            name:
+              type: string
+              description: Nombre de la billetera destino
+            balance:
+              type: string
+              format: decimal
+              description: Saldo actualizado de la billetera destino
+              example: "550000.00"
+
+    # ----------------------------------------------------------
+    # CATEGORY SCHEMAS
+    # ----------------------------------------------------------
+    CategoryType:
+      type: string
+      enum: [INCOME, EXPENSE]
+      description: |
+        Tipo de categoría:
+        - INCOME: Categoría de ingreso (aplicable a transacciones de tipo INCOME)
+        - EXPENSE: Categoría de gasto (aplicable a transacciones de tipo EXPENSE)
+
+    CategoryResponse:
+      type: object
+      required: [id, name, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID de la categoría
+        name:
+          type: string
+          description: Nombre de la categoría
+          example: "Alimentación"
+        type:
+          $ref: '#/components/schemas/CategoryType'
+        icon:
+          type: string
+          nullable: true
+          description: Identificador de icono (ej: utensils, car, film)
+          example: "utensils"
+        color:
+          type: string
+          nullable: true
+          description: Código hex de color
+          example: "#FF5733"
+
+    # ----------------------------------------------------------
+    # PAGINATION SCHEMAS
+    # ----------------------------------------------------------
+    PaginatedTransactionResponse:
+      type: object
+      required: [content, page, size, total_elements, total_pages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+          description: Lista de transacciones de la página actual
+        page:
+          type: integer
+          description: Número de página actual (0-indexed)
+          example: 0
+        size:
+          type: integer
+          description: Tamaño de página solicitado
+          example: 20
+        total_elements:
+          type: integer
+          description: Total de registros que coinciden con los filtros
+          example: 42
+        total_pages:
+          type: integer
+          description: Total de páginas disponibles
+          example: 3
+
+    # ----------------------------------------------------------
+    # ERROR SCHEMAS (springboot-kotlin-rest-error-response-standards)
+    # ----------------------------------------------------------
+    ApiErrorResponse:
+      type: object
+      required: [timestamp, status, error, code, message, path, trace_id, details]
+      description: |
+        Contrato estándar de errores REST. Todos los errores de la API siguen esta estructura.
+        Los campos `trace_id` y `rejected_value` usan snake_case en JSON.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Instante UTC en que ocurrió el error
+          example: "2026-06-16T10:30:00Z"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 422
+        error:
+          type: string
+          description: Nombre del status HTTP
+          example: "Unprocessable Entity"
+        code:
+          type: string
+          description: |
+            Código estable de negocio o técnico. No es el número HTTP.
+            Usado por el frontend para i18n y lógica de manejo de errores.
+          example: "WALLET_INSUFFICIENT_BALANCE"
+        message:
+          type: string
+          description: |
+            Mensaje descriptivo seguro para el cliente.
+            Nunca expone stack traces, clases internas ni detalles de implementación.
+          example: "The wallet does not have sufficient balance for this operation."
+        path:
+          type: string
+          description: Path del request que causó el error
+          example: "/api/v1/wallets/550e8400-e29b-41d4-a716-446655440000/transactions"
+        trace_id:
+          type: string
+          description: Identificador de traza para correlación de logs
+          example: "abc-123-def-456"
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorDetail'
+          description: |
+            Lista de detalles de error (ej: errores de validación de campos).
+            Puede ser vacío pero nunca nulo.
+
+    ApiErrorDetail:
+      type: object
+      required: [code, message]
+      description: Detalle de error a nivel de campo individual
+      properties:
+        field:
+          type: string
+          nullable: true
+          description: Nombre del campo que causó el error (puede ser nulo si no aplica a un campo)
+          example: "amount"
+        code:
+          type: string
+          description: Código del error de campo
+          example: "FIELD_INVALID"
+        message:
+          type: string
+          description: Mensaje descriptivo del error de campo
+          example: "Amount must be greater than zero."
+        rejected_value:
+          description: Valor rechazado que causó el error (puede ser nulo)
+          nullable: true
+          example: "-50.00"

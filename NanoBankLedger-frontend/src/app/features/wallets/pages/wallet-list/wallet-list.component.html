@@ -1,0 +1,49 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Mis Billeteras</h1>
+    <button class="btn btn-primary" (click)="showForm.set(true)">+ Nueva Billetera</button>
+  </div>
+
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando billeteras...</p>
+  </div>
+
+  <div *ngIf="error() && !loading()">
+    <div class="error-message">{{ error() }}</div>
+    <button class="btn btn-outline" (click)="loadWallets()">Reintentar</button>
+  </div>
+
+  <div *ngIf="!loading() && !error() && wallets().length === 0" class="empty-state card">
+    <h3>No tienes billeteras aun</h3>
+    <p>Crea tu primera billetera para empezar a gestionar tus finanzas.</p>
+    <button class="btn btn-primary" (click)="showForm.set(true)">Crear Billetera</button>
+  </div>
+
+  <div *ngIf="!loading() && !error() && wallets().length > 0" class="wallet-grid">
+    <div *ngFor="let wallet of wallets(); trackBy: trackById" class="wallet-card card">
+      <div class="wallet-header">
+        <span class="wallet-type-badge" [class]="'type-' + wallet.type.toLowerCase()">{{ wallet.type }}</span>
+        <div class="wallet-actions">
+          <button class="btn btn-sm btn-outline" (click)="editWallet(wallet)" title="Editar billetera">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-sm btn-outline" (click)="deleteWallet(wallet)" title="Eliminar billetera">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
+      <h3 class="wallet-name">{{ wallet.name }}</h3>
+      <p class="wallet-balance">${{ formatBalance(wallet.balance) }}</p>
+      <a [routerLink]="['/wallets', wallet.id, 'transactions']" class="wallet-link">Ver movimientos &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showForm()" class="modal-wrapper">
+  <app-wallet-form
+    [wallet]="editingWallet()"
+    (close)="closeForm()"
+    (saved)="onSaved()"
+  ></app-wallet-form>
+</div>

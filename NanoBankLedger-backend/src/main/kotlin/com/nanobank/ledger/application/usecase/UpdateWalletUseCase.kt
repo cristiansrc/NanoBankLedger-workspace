@@ -1,0 +1,46 @@
+package com.nanobank.ledger.application.usecase
+
+import com.nanobank.ledger.application.dto.*
+import com.nanobank.ledger.application.port.output.WalletRepositoryPort
+import com.nanobank.ledger.domain.model.Wallet
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import java.util.NoSuchElementException
+import java.util.UUID
+
+@Component
+class UpdateWalletUseCase(
+    private val walletRepository: WalletRepositoryPort
+) {
+    @Transactional
+    fun execute(userId: UUID, walletId: UUID, request: UpdateWalletRequest): WalletResponse {
+        val wallet = walletRepository.findById(walletId)
+            .orElseThrow { NoSuchElementException("Wallet not found: $walletId") }
+
+        if (wallet.userId != userId) {
+            throw NoSuchElementException("Wallet not found: $walletId")
+        }
+
+        val updated = wallet.copy(
+            name = request.name,
+            type = try {
+                com.nanobank.ledger.domain.model.WalletType.valueOf(request.type?.uppercase() ?: wallet.type.name)
+            } catch (e: IllegalArgumentException) {
+                wallet.type
+            }
+        )
+
+        val saved = walletRepository.save(updated)
+        return toResponse(saved)
+    }
+
+    private fun toResponse(wallet: Wallet): WalletResponse = WalletResponse(
+        id = wallet.id,
+        userId = wallet.userId,
+        name = wallet.name,
+        type = wallet.type.name,
+        balance = wallet.balance,
+        createdAt = wallet.createdAt,
+        updatedAt = wallet.updatedAt
+    )
+}

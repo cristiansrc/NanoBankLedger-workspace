@@ -1,0 +1,281 @@
+<div class="page-container">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumbs">
+    <a routerLink="/dashboard" class="breadcrumb-link">Dashboard</a>
+    <span class="breadcrumb-sep">/</span>
+    <a routerLink="/wallets" class="breadcrumb-link">Billeteras</a>
+    <span class="breadcrumb-sep" *ngIf="selectedWallet">/</span>
+    <span class="breadcrumb-current" *ngIf="selectedWallet">{{ selectedWallet.name }}</span>
+  </div>
+
+  <div class="page-header">
+    <h1>Transacciones</h1>
+    <button class="btn btn-primary" (click)="openCreateForm()" [disabled]="!selectedWalletId()">
+      + Nueva Transacción
+    </button>
+  </div>
+
+  <!-- Toast Notification -->
+  <div *ngIf="toast()" class="toast" [class.toast-success]="toast()!.type === 'success'" [class.toast-error]="toast()!.type === 'error'" [class.toast-info]="toast()!.type === 'info'" (click)="dismissToast()">
+    <span class="toast-icon">
+      <span *ngIf="toast()!.type === 'success'">✓</span>
+      <span *ngIf="toast()!.type === 'error'">✕</span>
+      <span *ngIf="toast()!.type === 'info'">ⓘ</span>
+    </span>
+    <span class="toast-message">{{ toast()!.message }}</span>
+  </div>
+
+  <!-- Wallet Selector -->
+  <div class="wallet-selector">
+    <label for="wallet-select">Billetera</label>
+    <select
+      id="wallet-select"
+      class="input"
+      [ngModel]="selectedWalletId()"
+      (ngModelChange)="onWalletChange($event)"
+    >
+      <option *ngFor="let w of wallets()" [value]="w.id">
+        {{ w.name }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Wallet Drop Targets -->
+  <div class="wallet-drop-grid" *ngIf="wallets().length > 0">
+    <div
+      *ngFor="let wallet of wallets(); trackBy: trackById"
+      class="wallet-drop-card card"
+      appDroppable
+      (dropped)="onDropTransaction($event, wallet.id)"
+      [class.wallet-drag-active]="draggingTransaction() !== null"
+      [class.wallet-same-wallet]="draggingTransaction()?.wallet_id === wallet.id"
+    >
+      <div class="wallet-drop-header">
+        <span class="wallet-type-badge" [class]="'type-' + wallet.type.toLowerCase()">{{ wallet.type }}</span>
+        <span *ngIf="hasOptimisticUpdate(wallet.id)" class="optimistic-badge" [class.positive]="getOptimisticDelta(wallet.id) > 0" [class.negative]="getOptimisticDelta(wallet.id) < 0">
+          {{ getOptimisticDelta(wallet.id) > 0 ? '+' : '' }}${{ getOptimisticDelta(wallet.id).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+        </span>
+      </div>
+      <h4 class="wallet-drop-name">{{ wallet.name }}</h4>
+      <p class="wallet-drop-balance">${{ getWalletBalance(wallet) }}</p>
+      <div *ngIf="draggingTransaction()?.wallet_id !== wallet.id" class="drop-hint">Suelta aquí para mover</div>
+      <div *ngIf="draggingTransaction()?.wallet_id === wallet.id" class="drop-hint drop-hint-current">Billetera actual</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar" *ngIf="selectedWalletId()">
+    <div class="filter-group">
+      <label for="filter-category">Categoría</label>
+      <select
+        id="filter-category"
+        class="input filter-input"
+        [ngModel]="filters().category_id || ''"
+        (ngModelChange)="filters().category_id = $event || undefined; onFilterChange()"
+      >
+        <option value="">Todas</option>
+        <option *ngFor="let cat of categories()" [value]="cat.id">
+          {{ cat.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-type">Tipo</label>
+      <select
+        id="filter-type"
+        class="input filter-input"
+        [ngModel]="filters().type || ''"
+        (ngModelChange)="filters().type = $event || undefined; onFilterChange()"
+      >
+        <option value="">Todos</option>
+        <option value="INCOME">Ingreso</option>
+        <option value="EXPENSE">Gasto</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-date-from">Desde</label>
+      <input
+        id="filter-date-from"
+        type="date"
+        class="input filter-input"
+        [ngModel]="filters().date_from || ''"
+        (ngModelChange)="filters().date_from = $event || undefined; onFilterChange()"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-date-to">Hasta</label>
+      <input
+        id="filter-date-to"
+        type="date"
+        class="input filter-input"
+        [ngModel]="filters().date_to || ''"
+        (ngModelChange)="filters().date_to = $event || undefined; onFilterChange()"
+      />
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn btn-outline" (click)="resetFilters()" *ngIf="filters().category_id || filters().type || filters().date_from || filters().date_to">
+        Limpiar filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando transacciones...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error() && !loading()" class="error-state">
+    <div class="error-banner">{{ error() }}</div>
+    <button class="btn btn-outline" (click)="loadTransactions()">Reintentar</button>
+  </div>
+
+  <!-- No Wallet Selected -->
+  <div *ngIf="!selectedWalletId() && !loading() && !error()" class="empty-state card">
+    <h3>Selecciona una billetera</h3>
+    <p>Elige una billetera para ver sus transacciones.</p>
+  </div>
+
+  <!-- Empty Transactions -->
+  <div
+    *ngIf="selectedWalletId() && !loading() && !error() && transactions().length === 0"
+    class="empty-state card"
+  >
+    <h3>Sin transacciones</h3>
+    <p>Esta billetera aún no tiene transacciones registradas.</p>
+    <button class="btn btn-primary" (click)="openCreateForm()">Crear primera transacción</button>
+  </div>
+
+  <!-- Transactions Table -->
+  <div *ngIf="selectedWalletId() && !loading() && !error() && transactions().length > 0" class="transactions-table-wrapper card">
+    <table class="transactions-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Categoría</th>
+          <th>Descripción</th>
+          <th class="col-amount">Monto</th>
+          <th>Tipo</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let t of transactions(); trackBy: trackById"
+          [appDraggable]="t.id"
+          [dragData]="t"
+          (dragstart)="onDragStartTransaction(t)"
+          (dragend)="onDragEndTransaction()"
+          class="drag-transaction-row"
+          [class.dragging-source]="draggingTransaction()?.id === t.id"
+        >
+          <td class="col-date">{{ formatDate(t.date) }}</td>
+          <td>
+            <span *ngIf="t.category_id">
+              {{ getCategoryName(t.category_id) }}
+            </span>
+            <span class="text-muted" *ngIf="!t.category_id">—</span>
+          </td>
+          <td class="col-description">{{ t.description || '—' }}</td>
+          <td class="col-amount" [class.text-income]="t.type === 'INCOME'" [class.text-expense]="t.type === 'EXPENSE'">
+            {{ t.type === 'INCOME' ? '+' : '-' }}{{ formatAmount(t.amount) }}
+          </td>
+          <td>
+            <span class="tag" [class.tag-income]="t.type === 'INCOME'" [class.tag-expense]="t.type === 'EXPENSE'">
+              {{ t.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+            </span>
+          </td>
+          <td class="col-actions">
+            <button class="btn btn-sm btn-outline" (click)="editTransaction(t)" title="Editar transacción">
+              Editar
+            </button>
+            <button class="btn btn-sm btn-outline" (click)="openMoveDialog(t)" title="Mover a otra billetera">
+              Mover
+            </button>
+            <button class="btn btn-sm btn-danger-outline" (click)="deleteTransaction(t.id)" title="Eliminar transacción">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1">
+      <button
+        class="btn btn-sm"
+        (click)="goToPage(page() - 1)"
+        [disabled]="page() === 0"
+      >
+        &larr; Anterior
+      </button>
+
+      <span class="pagination-info">
+        Página {{ page() + 1 }} de {{ totalPages() }}
+        <span class="pagination-total">({{ totalElements() }} transacciones)</span>
+      </span>
+
+      <button
+        class="btn btn-sm"
+        (click)="goToPage(page() + 1)"
+        [disabled]="page() >= totalPages() - 1"
+      >
+        Siguiente &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- Move Transaction Dialog -->
+  <div *ngIf="movingTransactionId()" class="modal-wrapper">
+    <div class="modal-overlay" (click)="cancelMove()"></div>
+    <div class="modal card">
+      <div class="modal-header">
+        <h2>Mover Transacción</h2>
+        <button class="btn-close" (click)="cancelMove()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="move-description">Selecciona la billetera de destino:</p>
+        <div class="field">
+          <label for="target-wallet">Billetera destino</label>
+          <select
+            id="target-wallet"
+            class="input"
+            [(ngModel)]="selectedTargetWalletId"
+          >
+            <option value="" disabled>Selecciona una billetera</option>
+            <option *ngFor="let w of walletsForMove()" [value]="w.id">
+              {{ w.name }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="moveError()" class="error-message">{{ moveError() }}</div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" (click)="cancelMove()">Cancelar</button>
+          <button
+            class="btn btn-primary"
+            (click)="confirmMove()"
+            [disabled]="!selectedTargetWalletId()"
+          >
+            Mover
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Form Modal -->
+<div *ngIf="showForm()" class="modal-wrapper">
+  <app-transaction-form
+    [walletId]="selectedWalletId()"
+    [transaction]="editingTransaction()"
+    [categories]="categories()"
+    (close)="closeForm()"
+    (saved)="onSaved()"
+  ></app-transaction-form>
+</div>

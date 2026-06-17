@@ -1,0 +1,52 @@
+<nav *ngIf="authService.isAuthenticated()" class="navbar">
+  <div class="nav-brand-section">
+    <a class="nav-brand" routerLink="/dashboard">NanoBank</a>
+  </div>
+  <div class="nav-right-section">
+    <span class="nav-username">{{ authService.currentUser()?.name || 'Usuario' }}</span>
+    <div class="nav-menu-container" (click)="$event.stopPropagation()">
+      <button class="hamburger-btn" (click)="toggleMenu()" [class.open]="menuOpen()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div *ngIf="menuOpen()" class="dropdown-menu">
+        <a class="dropdown-item" routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
+        <a class="dropdown-item" routerLink="/wallets" routerLinkActive="active" (click)="closeMenu()">Billeteras</a>
+        <a class="dropdown-item" routerLink="/transactions" routerLinkActive="active" (click)="closeMenu()">Transacciones</a>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item dropdown-logout" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div *ngIf="authService.isAuthenticated()" class="app-layout">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <a class="sidebar-link" routerLink="/dashboard" routerLinkActive="active">
+        <span class="sidebar-icon">◉</span>
+        Dashboard
+      </a>
+      <a class="sidebar-link" routerLink="/wallets" routerLinkActive="active">
+        <span class="sidebar-icon">◻</span>
+        Billeteras
+      </a>
+      <a class="sidebar-link" routerLink="/transactions" routerLinkActive="active">
+        <span class="sidebar-icon">↔</span>
+        Transacciones
+      </a>
+      <button class="sidebar-link sidebar-logout" (click)="logout()">
+        <span class="sidebar-icon">→</span>
+        Cerrar sesión
+      </button>
+    </nav>
+  </aside>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<div *ngIf="!authService.isAuthenticated()" class="auth-only">
+  <router-outlet></router-outlet>
+</div>

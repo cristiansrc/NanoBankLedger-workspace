@@ -1,0 +1,179 @@
+/* NanoBank Ledger - Minimalist UI Theme */
+
+:root {
+  /* Typography */
+  --font-sans: 'Geist', 'Helvetica Neue', sans-serif;
+  --font-serif: 'Newsreader', serif;
+  --font-mono: 'Geist Mono', 'SF Mono', monospace;
+  
+  /* Colors - Warm Monochrome */
+  --color-canvas: #F7F6F3;
+  --color-surface: #FFFFFF;
+  --color-border: #EAEAEA;
+  --color-text-primary: #2F3437;
+  --color-text-secondary: #787774;
+  --color-text-muted: #B0B0A8;
+  
+  /* Accent Pastels */
+  --color-red-bg: #FDEBEC;
+  --color-red-text: #9F2F2D;
+  --color-blue-bg: #E1F3FE;
+  --color-blue-text: #1F6C9F;
+  --color-green-bg: #EDF3EC;
+  --color-green-text: #346538;
+  --color-yellow-bg: #FBF3DB;
+  --color-yellow-text: #956400;
+  
+  /* Sizing */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+a {
+  color: var(--color-blue-text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Utility classes */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.btn:hover {
+  background: #F0F0EE;
+}
+
+.btn-primary {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.btn-primary:hover {
+  background: #333333;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-danger {
+  color: var(--color-red-text);
+  background: var(--color-red-bg);
+  border-color: var(--color-red-bg);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-text-secondary);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tag-income {
+  background: var(--color-green-bg);
+  color: var(--color-green-text);
+}
+
+.tag-expense {
+  background: var(--color-red-bg);
+  color: var(--color-red-text);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
