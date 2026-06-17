@@ -2,59 +2,45 @@
 
 Sistema de gestión financiera con wallets, transacciones, categorías, autenticación JWT y drag & drop entre wallets.
 
+**Desarrollado por:** Cristhiam Reina (con asistencia de IA)
 **Evaluación:** FS-SR-2026-002
-
-| Aspecto | Detalle |
-|---|---|
-| **Backend** | Spring Boot 3.4.0 + Kotlin 2.0.21 + Java 21 |
-| **Frontend** | Angular 17.3+ (Standalone Components + Signals) |
-| **Base de Datos** | PostgreSQL 16 con Flyway (ddl-auto=validate) |
-| **Autenticación** | JWT dual (access 15min + refresh 7d con rotación) |
-| **Infraestructura** | Docker Compose (3 servicios: postgres, backend, frontend) |
-| **Tests Backend** | JUnit 5, Mockito, JaCoCo (94% cobertura) |
-| **Tests Frontend** | Jasmine, Karma (86.76% cobertura) |
 
 ---
 
-## Requisitos cumplidos
+## 📑 Tabla de Contenido
 
-### Requisitos Funcionales
+- [Stack Tecnológico](#stack-tecnológico)
+- [Justificación de Base de Datos](#justificación-de-base-de-datos)
+- [Requisitos Cumplidos](#requisitos-cumplidos)
+- [Uso Estratégico de IA](#uso-estratégico-de-ia)
+  - [OpenCode API](#opencode-api)
+  - [Ecosistema config-ai](#ecosistema-config-ai)
+  - [Ciclo de Vida SDLC](#ciclo-de-vida-sdlc)
+  - [Graphify - Grafos de Conocimiento](#graphify---grafos-de-conocimiento)
+  - [Agentes Utilizados](#agentes-utilizados)
+  - [Skills Utilizados](#skills-utilizados)
+- [Bitácora de Prompts](#bitácora-de-prompts)
+- [Criterio Senior](#criterio-senior)
+- [Arquitectura](#arquitectura)
+- [Métricas Finales](#métricas-finales)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Cómo Ejecutar](#cómo-ejecutar)
 
-| # | Requisito | Estado | Descripción |
-|---|---|---|---|
-| 1 | **Dashboard de Billeteras** | ✅ Implementado | CRUD completo de wallets en Angular, vista dashboard con resumen de saldo total, cantidad de billeteras y tipo más usado. Backend con endpoints REST protegidos por JWT. |
-| 2 | **Gestión de Transacciones** | ✅ Implementado | Creación, edición, eliminación de transacciones tipo INCOME/EXPENSE por wallet. Actualización atómica de saldos con CHECK constraints en BD. |
-| 3 | **Interfaz Dinámica** | ✅ Implementado | Filtros en tiempo real por categoría, tipo y fecha. Drag & Drop entre wallets con optimistic UI y rollback en caso de error. |
-| 4 | **Seguridad JWT** | ✅ Implementado | JWT dual con access token (15 min) + refresh token (7 días) con rotación y detección de robo. |
+---
 
-### Requisitos Técnicos
+## Stack Tecnológico
 
-#### A. Arquitectura y Escalabilidad
-
-| Aspecto | Estado |
+| Capa | Tecnología |
 |---|---|
-| SOLID: Arquitectura Hexagonal (Ports & Adapters) con dominio puro | ✅ |
-| DTOs en todas las capas de transporte | ✅ |
-| Global Exception Handler con 15 handlers y códigos de error estables | ✅ |
-| Base de datos PostgreSQL: justificación ACID para transacciones financieras | ✅ |
+| Backend | Spring Boot 3.4.0 + Kotlin 2.0.21 + Java 21 |
+| Frontend | Angular 17.3+ (Standalone Components + Signals) |
+| Base de Datos | PostgreSQL 16 con Flyway (ddl-auto=validate) |
+| Autenticación | JWT dual (access 15min + refresh 7d con rotación) |
+| Infraestructura | Docker Compose (3 servicios: postgres, backend, frontend) |
+| Tests Backend | JUnit 5, Mockito, JaCoCo (94% cobertura) |
+| Tests Frontend | Jasmine, Karma (86.76% cobertura) |
 
-#### B. Calidad y Pruebas
-
-| Aspecto | Resultado |
-|---|---|
-| Backend: 134 tests, 0 fallos, **94% cobertura** (JUnit 5 / Mockito / JaCoCo) | ✅ |
-| Frontend: 168 tests, 0 fallos, **86.76% cobertura** (Jasmine / Karma) | ✅ |
-| Tests de lógica de saldos y transferencia entre billeteras | ✅ |
-
-#### C. IA Mastery
-
-| Aspecto | Estado |
-|---|---|
-| Ciclo SDD (Spec-Driven Development) con agentes especializados | ✅ |
-| Supervisión humana en gates de validación | ✅ |
-| Skills cargados: 23 skills del ecosistema config-ai | ✅ |
-
-
+---
 
 ## Justificación de Base de Datos
 
@@ -108,31 +94,67 @@ El modelo se diseñó con 4 tablas principales y escalabilidad en mente:
 
 ---
 
-## Stack Tecnológico
+## Requisitos Cumplidos
 
-| Capa | Tecnología |
+### Requisitos Funcionales
+
+| # | Requisito | Estado | Descripción |
+|---|---|---|---|
+| 1 | **Dashboard de Billeteras** | ✅ Implementado | CRUD completo de wallets en Angular, vista dashboard con resumen de saldo total, cantidad de billeteras y tipo más usado. Backend con endpoints REST protegidos por JWT. |
+| 2 | **Gestión de Transacciones** | ✅ Implementado | Creación, edición, eliminación de transacciones tipo INCOME/EXPENSE por wallet. Actualización atómica de saldos con CHECK constraints en BD. |
+| 3 | **Interfaz Dinámica** | ✅ Implementado | Filtros en tiempo real por categoría, tipo y fecha. Drag & Drop entre wallets con optimistic UI y rollback en caso de error. |
+| 4 | **Seguridad JWT** | ✅ Implementado | JWT dual con access token (15 min) + refresh token (7 días) con rotación y detección de robo. |
+
+### Requisitos Técnicos
+
+#### A. Arquitectura y Escalabilidad
+
+| Aspecto | Estado |
 |---|---|
-| Backend | Spring Boot 3.4.0 + Kotlin 2.0.21 + Java 21 |
-| Frontend | Angular 17.3+ (Standalone Components + Signals) |
-| Base de Datos | PostgreSQL 16 con Flyway (ddl-auto=validate) |
-| Autenticación | JWT dual (access 15min + refresh 7d con rotación) |
-| Infraestructura | Docker Compose (3 servicios: postgres, backend, frontend) |
-| Tests Backend | JUnit 5, Mockito, JaCoCo (94% cobertura) |
-| Tests Frontend | Jasmine, Karma (86.76% cobertura) |
+| SOLID: Arquitectura Hexagonal (Ports & Adapters) con dominio puro | ✅ |
+| DTOs en todas las capas de transporte | ✅ |
+| Global Exception Handler con 15 handlers y códigos de error estables | ✅ |
+| Base de datos PostgreSQL: justificación ACID para transacciones financieras | ✅ |
+
+#### B. Calidad y Pruebas
+
+| Aspecto | Resultado |
+|---|---|
+| Backend: 134 tests, 0 fallos, **94% cobertura** (JUnit 5 / Mockito / JaCoCo) | ✅ |
+| Frontend: 168 tests, 0 fallos, **86.76% cobertura** (Jasmine / Karma) | ✅ |
+| Tests de lógica de saldos y transferencia entre billeteras | ✅ |
+
+#### C. IA Mastery
+
+| Aspecto | Estado |
+|---|---|
+| Ciclo SDD (Spec-Driven Development) con agentes especializados | ✅ |
+| Supervisión humana en gates de validación | ✅ |
+| Skills cargados: 23 skills del ecosistema config-ai | ✅ |
+
 ---
 
-## Arquitectura
+## Uso Estratégico de IA
 
-- **Hexagonal (Ports & Adapters)** en 4 Bounded Contexts: Auth, Wallets, Transactions, Categories.
-- **API-First**: OpenAPI 3.1 contrato con 16 endpoints.
-- **Frontend**: Layout responsive con sidebar en desktop, menú hamburguesa en mobile.
-- **Sesión persistente** en localStorage con validación de expiración JWT.
+Este proyecto fue desarrollado por **Cristhiam Reina** con asistencia estratégica de Inteligencia Artificial, utilizando un ecosistema de agentes especializados y múltiples modelos de lenguaje.
 
----
+### OpenCode API
 
-## SDLC Workflow (Spec-Driven Development)
+Se utilizó [OpenCode](https://opencode.ai) como plataforma de IA multimodelo, que permite acceder a **Claude (Anthropic), ChatGPT (OpenAI), Gemini (Google), Qwen (Alibaba) y DeepSeek** desde una sola interfaz con facturación unificada.
 
-El ciclo de vida se basó en SDD (Spec-Driven Development) utilizando agentes de IA especializados del ecosistema [config-ai](https://github.com/cristiansrc/config-ai):
+**Modelos utilizados en este proyecto:**
+- `opencode-go/deepseek-v4-flash` — Agentes de ejecución, documentación y orquestación
+- `opencode-go/qwen3.7-plus` — Agentes de planificación, validación y revisión
+
+### Ecosistema config-ai
+
+El desarrollo se apoyó en [config-ai](https://github.com/cristiansrc/config-ai), un ecosistema de **agentes y skills de IA** creado por Cristhiam Reina para estandarizar y acelerar el desarrollo de software siguiendo el flujo **Spec-Driven Development (SDD)**.
+
+> **Nota:** config-ai es un repositorio independiente que centraliza la configuración de agentes y skills. Puedes consultar su [README completo](https://github.com/cristiansrc/config-ai) para entender la arquitectura completa del ecosistema.
+
+### Ciclo de Vida SDLC
+
+El flujo de desarrollo implementado fue:
 
 ```
  1. REQUISITOS      → requirements-analyst      → docs/requerimientos.pdf
@@ -147,13 +169,41 @@ El ciclo de vida se basó en SDD (Spec-Driven Development) utilizando agentes de
  9. PRUEBAS FUNCIONALES → functional-test-planner → 25 escenarios E2E
 10. CORRECCIONES    → bug-fixing-workflow        → 6 ciclos de fixes
     ─── GATE HUMANO: Aprobación QA ───
-11. COMMIT          → git-executor               → 3 commits semánticos
+11. COMMIT          → git-executor               → commits semánticos
 ```
 
-Flujo completo documentado en [desarrollo-log.md](./desarrollo-log.md).
+Cada etapa del flujo utiliza agentes especializados que cargan skills específicos para garantizar calidad y consistencia. Todo el proceso está documentado en [desarrollo-log.md](./desarrollo-log.md).
 
+### Graphify - Grafos de Conocimiento
 
-## Skills utilizados (desde config-ai)
+Durante el desarrollo se utilizó **Graphify**, una herramienta de grafos de conocimiento que permite:
+
+- **Navegación inteligente del código fuente**: Consultas como "encuentra la relación entre el controlador de transacciones y el repositorio JPA" devuelven subgrafos específicos sin necesidad de leer archivos completos.
+- **Detección de comunidades**: Identifica agrupaciones lógicas de archivos (por bounded context, por capa arquitectónica) para entender la estructura del proyecto.
+- **Actualización automática**: Cada vez que se modifica código, Graphify actualiza el grafo en segundo plano (solo AST, sin costo de API).
+
+Graphify fue particularmente útil para mantener el contexto arquitectónico durante los 6 ciclos de corrección, permitiendo al orquestador entender rápidamente el impacto de cada cambio sin releer toda la base de código.
+
+### Agentes Utilizados
+
+| Agente | Rol |
+|---|---|
+| [master-orchestrator](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/master-orchestrator.md) | Orquestador principal - coordinó todo el flujo SDD |
+| [planner](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/planner.md) | Planificación y diseño técnico |
+| [spec-validator](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/spec-validator.md) | Validación de especificaciones |
+| [enterprise-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/enterprise-architect.md) | Visión macro del sistema |
+| [task-decomposer](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/task-decomposer.md) | Descomposición de tareas |
+| [executor](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/executor.md) | Implementación de código backend y frontend |
+| [devops-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/devops-architect.md) | Infraestructura Docker |
+| [test-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/test-architect.md) | Diseño de pruebas automatizadas |
+| [functional-test-planner](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/functional-test-planner.md) | Plan de pruebas funcionales |
+| [reviewer](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/reviewer.md) | Revisión de código |
+| [documentation](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/documentation.md) | Documentación técnica |
+| [git-executor](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/git-executor.md) | Operaciones Git |
+| [general-helper](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/general-helper.md) | Soporte operativo |
+| [final-validation](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/final-validation.md) | Validación final |
+
+### Skills Utilizados
 
 Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 
@@ -174,7 +224,6 @@ Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 | [model-tier-routing](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/model-tier-routing) | Política de escalamiento de modelos |
 | [context-pinning](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/context-pinning) | Gestión de contexto crítico |
 | [documentation-lifecycle](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/documentation-lifecycle) | Ciclo de vida de documentación |
-| [documentation-standards](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/documentation-standards) | Estándares de documentación |
 | [git-ops](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/git-ops) | Automatización Git |
 | [functional-testing-standard](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/functional-testing-standard) | Pruebas funcionales E2E |
 | [design-patterns-standard](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/design-patterns-standard) | Patrones de diseño |
@@ -182,102 +231,8 @@ Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 | [code-review-checklist](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/code-review-checklist) | Revisión de código |
 | [pre-flight-check](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/pre-flight-check) | Validación pre-commit |
 | [bug-fixing-workflow](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/bug-fixing-workflow) | Protocolo de resolución de errores |
-
----
-
-## Agentes utilizados
-
-Agentes orquestados desde [config-ai](https://github.com/cristiansrc/config-ai):
-
-| Agente | Rol |
-|---|---|
-| [master-orchestrator](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/master-orchestrator.md) | Orquestador principal |
-| [planner](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/planner.md) | Planificación y diseño técnico |
-| [executor](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/executor.md) | Implementación de código |
-| [test-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/test-architect.md) | Diseño de pruebas automatizadas |
-| [devops-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/devops-architect.md) | Infraestructura Docker |
-| [documentation](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/documentation.md) | Documentación técnica |
-| [git-executor](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/git-executor.md) | Operaciones Git |
-| [spec-validator](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/spec-validator.md) | Validación de especificaciones |
-| [enterprise-architect](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/enterprise-architect.md) | Visión macro del sistema |
-| [reviewer](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/reviewer.md) | Revisión de código |
-| [task-decomposer](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/task-decomposer.md) | Descomposición de tareas |
-| [functional-test-planner](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/functional-test-planner.md) | Plan de pruebas funcionales |
-| [general-helper](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/general-helper.md) | Soporte operativo |
-| [final-validation](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/agents/final-validation.md) | Validación final |
-
----
-
-## Métricas finales
-
-| Métrica | Backend | Frontend |
-|---|---|---|
-| Tests | 134 | 168 |
-| Fallos | 0 | 0 |
-| Cobertura | 94% | 86.76% |
-| Tareas | 28 (T1-T28) | 13 (T29-T41) |
-| Infraestructura | Docker Compose 3 servicios UP | |
-
----
-
-## Cómo ejecutar
-
-```bash
-cd NanoBankLedger-infrastructure/docker-compose
-docker compose up -d
-```
-
-| Servicio | URL |
-|---|---|
-| Frontend | http://localhost:4200 |
-| Backend API | http://localhost:8080 |
-| Health Check | http://localhost:8080/api/v1/health |
-
----
-
-## Estructura del proyecto
-
-```
-NanoBankLedger-workspace/
-│
-├── docs/                              # Documentación del proyecto
-│   ├── specs/                         # Especificaciones SDD
-│   │   ├── master-spec.md             # Spec maestro con modelo de datos, RN, contratos
-│   │   └── tasks/                     # Tablero de tareas del incremento
-│   ├── api/                           # Contrato OpenAPI 3.1
-│   │   └── openapi.yaml               # 16 endpoints, 4 tags
-│   ├── architecture/                  # Documentación arquitectónica
-│   │   ├── system-landscape.md        # C4 Level 1-2
-│   │   ├── context-map.md             # 4 Bounded Contexts
-│   │   ├── integration-map.md         # Integraciones entre BCs
-│   │   └── decision-records/          # ADRs (Monorepo, Hexagonal, JWT)
-│   └── functional-testing/            # Pruebas funcionales
-│       └── functional-test-plan.md    # 25 escenarios E2E
-│
-├── NanoBankLedger-backend/            # Backend Spring Boot + Kotlin
-│   ├── src/main/kotlin/               # Código fuente (Arquitectura Hexagonal)
-│   │   ├── domain/                    # Entidades puras, reglas de negocio
-│   │   ├── application/               # Puertos, DTOs, Use Cases
-│   │   └── infrastructure/            # REST controllers, JPA, Security, Config
-│   ├── src/main/resources/            # Configuración y migraciones Flyway
-│   └── src/test/                      # Tests (134 tests, 94% cobertura)
-│
-├── NanoBankLedger-frontend/           # Frontend Angular 17+
-│   ├── src/app/                       # Código fuente
-│   │   ├── core/                      # Servicios, modelos, guards, interceptors
-│   │   ├── features/                  # Módulos funcionales (auth, wallets, transactions, dashboard)
-│   │   └── shared/                    # Directivas compartidas (drag & drop)
-│   └── src/                           # Tests (168 tests, 86.76% cobertura)
-│
-├── NanoBankLedger-infrastructure/     # Infraestructura Docker
-│   ├── docker-compose/                # Docker Compose + Nginx config
-│   │   ├── docker-compose.yml         # 3 servicios: postgres, backend, frontend
-│   │   └── nginx.conf                 # Proxy reverso /api/ → backend
-│   └── scripts/                       # Scripts de base de datos
-│
-├── desarrollo-log.md                  # Bitácora completa de desarrollo
-└── README.md                          # Este archivo
-```
+| [graphify](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/graphify) | Grafos de conocimiento para navegación de código |
+| [documentation-standards](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/documentation-standards) | Estándares de documentación |
 
 ---
 
@@ -339,38 +294,82 @@ Durante el desarrollo, varias sugerencias de la IA fueron modificadas o rechazad
 
 ---
 
-## OpenCode API - Plataforma de IA Multimodelo
+## Arquitectura
 
-Este proyecto fue desarrollado utilizando [OpenCode](https://opencode.ai), una plataforma que unifica múltiples proveedores de IA en un solo lugar.
+- **Hexagonal (Ports & Adapters)** en 4 Bounded Contexts: Auth, Wallets, Transactions, Categories.
+- **API-First**: OpenAPI 3.1 contrato con 16 endpoints.
+- **Frontend**: Layout responsive con sidebar en desktop, menú hamburguesa en mobile.
+- **Sesión persistente** en localStorage con validación de expiración JWT.
 
-### Ventajas de OpenCode API
+---
 
-- **Multimodelo**: Acceso a Claude (Anthropic), ChatGPT (OpenAI), Gemini (Google), Qwen (Alibaba) y DeepSeek desde una misma interfaz.
-- **Facturación unificada**: Un solo proveedor para todos los modelos, sin necesidad de cuentas separadas.
-- **Modelos utilizados en este proyecto**:
-  - `opencode-go/deepseek-v4-flash` — Agentes de ejecución, documentación y orquestación
-  - `opencode-go/qwen3.7-plus` — Agentes de planificación, validación y revisión
+## Métricas Finales
 
-### Ecosistema de Desarrollo (config-ai)
+| Métrica | Backend | Frontend |
+|---|---|---|
+| Tests | 134 | 168 |
+| Fallos | 0 | 0 |
+| Cobertura | 94% | 86.76% |
+| Tareas | 28 (T1-T28) | 13 (T29-T41) |
+| Infraestructura | Docker Compose 3 servicios UP | |
 
-Este proyecto se desarrolló bajo el flujo **Spec-Driven Development (SDD)** utilizando el ecosistema de agentes y skills disponible en [config-ai](https://github.com/cristiansrc/config-ai).
+---
 
-El ciclo de vida fue el siguiente:
+## Estructura del Proyecto
 
-1. **Requerimientos** → Se analizó el PDF de requisitos
-2. **Planificación** → `planner` creó la Master Spec, contrato OpenAPI y Shared Context
-3. **Validación** → `spec-validator` revisó consistencia (3 rondas, 12 findings corregidos)
-4. **Aprobación humana** → Gate de validación del plan
-5. **Descomposición** → `task-decomposer` generó 44 tareas atómicas
-6. **Ejecución** → `executor` implementó backend (T1-T28), frontend (T29-T41) e infraestructura (T42-T44)
-7. **Pruebas** → `test-architect` generó 134 tests backend + 168 tests frontend
-8. **Correcciones** → Fixes iterativos: snake_case, sesión persistente, filtros, layout responsive
-9. **Commit** → `git-executor` realizó los commits semánticos
+```
+NanoBankLedger-workspace/
+│
+├── docs/                              # Documentación del proyecto
+│   ├── specs/                         # Especificaciones SDD
+│   │   ├── master-spec.md             # Spec maestro con modelo de datos, RN, contratos
+│   │   └── tasks/                     # Tablero de tareas del incremento
+│   ├── api/                           # Contrato OpenAPI 3.1
+│   │   └── openapi.yaml               # 16 endpoints, 4 tags
+│   ├── architecture/                  # Documentación arquitectónica
+│   │   ├── system-landscape.md        # C4 Level 1-2
+│   │   ├── context-map.md             # 4 Bounded Contexts
+│   │   ├── integration-map.md         # Integraciones entre BCs
+│   │   └── decision-records/          # ADRs (Monorepo, Hexagonal, JWT)
+│   └── functional-testing/            # Pruebas funcionales
+│       └── functional-test-plan.md    # 25 escenarios E2E
+│
+├── NanoBankLedger-backend/            # Backend Spring Boot + Kotlin
+│   ├── src/main/kotlin/               # Código fuente (Arquitectura Hexagonal)
+│   │   ├── domain/                    # Entidades puras, reglas de negocio
+│   │   ├── application/               # Puertos, DTOs, Use Cases
+│   │   └── infrastructure/            # REST controllers, JPA, Security, Config
+│   ├── src/main/resources/            # Configuración y migraciones Flyway
+│   └── src/test/                      # Tests (134 tests, 94% cobertura)
+│
+├── NanoBankLedger-frontend/           # Frontend Angular 17+
+│   ├── src/app/                       # Código fuente
+│   │   ├── core/                      # Servicios, modelos, guards, interceptors
+│   │   ├── features/                  # Módulos funcionales (auth, wallets, transactions, dashboard)
+│   │   └── shared/                    # Directivas compartidas (drag & drop)
+│   └── src/                           # Tests (168 tests, 86.76% cobertura)
+│
+├── NanoBankLedger-infrastructure/     # Infraestructura Docker
+│   ├── docker-compose/                # Docker Compose + Nginx config
+│   │   ├── docker-compose.yml         # 3 servicios: postgres, backend, frontend
+│   │   └── nginx.conf                 # Proxy reverso /api/ → backend
+│   └── scripts/                       # Scripts de base de datos
+│
+├── desarrollo-log.md                  # Bitácora completa de desarrollo
+└── README.md                          # Este archivo
+```
 
-### Agentes utilizados en esta sesión
+---
 
-Ver sección [Agentes utilizados](#agentes-utilizados) para el listado detallado con enlaces a cada agente.
+## Cómo Ejecutar
 
-### Skills utilizados en esta sesión
+```bash
+cd NanoBankLedger-infrastructure/docker-compose
+docker compose up -d
+```
 
-Ver sección [Skills utilizados](#skills-utilizados-desde-config-ai) para el listado detallado con enlaces a cada skill.
+| Servicio | URL |
+|---|---|
+| Frontend | http://localhost:4200 |
+| Backend API | http://localhost:8080 |
+| Health Check | http://localhost:8080/api/v1/health |
