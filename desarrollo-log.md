@@ -667,7 +667,7 @@ TOTAL: 107 SUCCESS, 0 FAILED
 |---|---|---|---|
 | Tests | 134 ✅ | 168 ✅ | — |
 | Fallos | 0 ✅ | 0 ✅ | — |
-| Cobertura | 94% ✅ | 86.76% ✅ | — |
+| Cobertura | 93.94% ✅ | 86.77% ✅ | — |
 | Desviaciones D-019 | Corregida ✅ | — | — |
 | Rate limiting | Implementado ✅ | — | — |
 | Token cleanup | Implementado ✅ | — | — |
@@ -824,7 +824,7 @@ Mobile (<768px):
 ### Estado actual del proyecto
 | Componente | Estado |
 |---|---|
-| Backend (Spring Boot + Kotlin) | ✅ 134 tests, 94% cobertura |
+| Backend (Spring Boot + Kotlin) | ✅ 134 tests, 93.94% cobertura |
 | Frontend (Angular 17+) | ✅ Build exitoso, sesión persistente, layout responsive |
 | Infraestructura (Docker) | ✅ 3 contenedores UP (postgres, backend, frontend) |
 | Sesión entre pestañas | ✅ localStorage con tokens |

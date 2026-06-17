@@ -38,8 +38,8 @@ Sistema de gestión financiera con wallets, transacciones, categorías, autentic
 | Base de Datos | PostgreSQL 16 con Flyway (ddl-auto=validate) |
 | Autenticación | JWT dual (access 15min + refresh 7d con rotación) |
 | Infraestructura | Docker Compose (3 servicios: postgres, backend, frontend) |
-| Tests Backend | JUnit 5, Mockito, JaCoCo (94% cobertura) |
-| Tests Frontend | Jasmine, Karma (86.76% cobertura) |
+| Tests Backend | JUnit 5, Mockito, JaCoCo (93.94% cobertura) |
+| Tests Frontend | Jasmine, Karma (86.77% cobertura) |
 
 ---
 
@@ -121,8 +121,8 @@ El modelo se diseñó con 4 tablas principales y escalabilidad en mente:
 
 | Aspecto | Resultado |
 |---|---|
-| Backend: 134 tests, 0 fallos, **94% cobertura** (JUnit 5 / Mockito / JaCoCo) | ✅ |
-| Frontend: 168 tests, 0 fallos, **86.76% cobertura** (Jasmine / Karma) | ✅ |
+| Backend: 134 tests, 0 fallos, **93.94% cobertura** (JUnit 5 / Mockito / JaCoCo) | ✅ |
+| Frontend: 168 tests, 0 fallos, **86.77% cobertura** (Jasmine / Karma) | ✅ |
 | Tests de lógica de saldos y transferencia entre billeteras | ✅ |
 
 #### C. IA Mastery
@@ -313,7 +313,7 @@ Durante el desarrollo, varias sugerencias de la IA fueron modificadas o rechazad
 |---|---|---|
 | Tests | 134 | 168 |
 | Fallos | 0 | 0 |
-| Cobertura | 94% | 86.76% |
+| Cobertura | 93.94% | 86.77% |
 | Tareas | 28 (T1-T28) | 13 (T29-T41) |
 | Infraestructura | Docker Compose 3 servicios UP | |
 
@@ -344,14 +344,14 @@ NanoBankLedger-workspace/
 │   │   ├── application/               # Puertos, DTOs, Use Cases
 │   │   └── infrastructure/            # REST controllers, JPA, Security, Config
 │   ├── src/main/resources/            # Configuración y migraciones Flyway
-│   └── src/test/                      # Tests (134 tests, 94% cobertura)
+│   └── src/test/                      # Tests (134 tests, 93.94% cobertura)
 │
 ├── NanoBankLedger-frontend/           # Frontend Angular 17+
 │   ├── src/app/                       # Código fuente
 │   │   ├── core/                      # Servicios, modelos, guards, interceptors
 │   │   ├── features/                  # Módulos funcionales (auth, wallets, transactions, dashboard)
 │   │   └── shared/                    # Directivas compartidas (drag & drop)
-│   └── src/                           # Tests (168 tests, 86.76% cobertura)
+│   └── src/                           # Tests (168 tests, 86.77% cobertura)
 │
 ├── NanoBankLedger-infrastructure/     # Infraestructura Docker
 │   ├── docker-compose/                # Docker Compose + Nginx config

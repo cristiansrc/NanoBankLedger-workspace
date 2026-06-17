@@ -11,7 +11,7 @@
 
 `implemented`
 
-MVP completado exitosamente el 2026-06-16. 44/44 tareas implementadas. Backend: 134 tests, 0 fallos, 94% cobertura. Frontend: build exitoso, sesión persistente en localStorage, layout responsive con sidebar. Infraestructura Docker: 3/3 contenedores UP. Correcciones: auth guard, migracion V2 ENUMs→VARCHAR, snake_case global, filtro type, categoría opcional, sesión persistente, sidebar + hamburger menu responsive, refresco de saldos.
+MVP completado exitosamente el 2026-06-16. 44/44 tareas implementadas. Backend: 134 tests, 0 fallos, 93.94% cobertura. Frontend: build exitoso, sesión persistente en localStorage, layout responsive con sidebar. Infraestructura Docker: 3/3 contenedores UP. Correcciones: auth guard, migracion V2 ENUMs→VARCHAR, snake_case global, filtro type, categoría opcional, sesión persistente, sidebar + hamburger menu responsive, refresco de saldos.
 
 ---
 
@@ -49,7 +49,7 @@ MVP completado exitosamente el 2026-06-16. 44/44 tareas implementadas. Backend: 
 | 8 | ADR-002 | Archivo existente (299 líneas). Arquitectura Hexagonal con 4 BCs como hexágonos independientes | `pass` |
 | 9 | ADR-003 | Archivo existente (335 líneas). JWT dual con refresh token rotativo y detección de robo | `pass` |
 | 10 | Backend Project | Directorio existente. Sin código implementado aún (MVP greenfield) | `pass` |
-| 11 | Frontend Project | Directorio existente. MVP completo: 13 tareas (T29-T41) implementadas, 168 tests, 86.76% cobertura. Auth guard fix aplicado: rutas protegidas con canActivate, raíz y wildcard redirigen a /auth/login. | `pass` |
+| 11 | Frontend Project | Directorio existente. MVP completo: 13 tareas (T29-T41) implementadas, 168 tests, 86.77% cobertura. Auth guard fix aplicado: rutas protegidas con canActivate, raíz y wildcard redirigen a /auth/login. | `pass` |
 | 12 | Infrastructure Project | Directorio existente. Docker completado: Dockerfiles multi-stage, docker-compose con 3 servicios (postgres, backend, frontend), nginx.conf, scripts init-db/reset-db. 3/3 contenedores UP. | `pass` |
 | 13 | Task Board | Archivo existente. 44/44 tareas completadas. | `pass` |
 | 14 | Migraciones Flyway | V1__initial_schema.sql y V2__fix_enum_columns.sql existentes. V2 corrige ENUMs nativos a VARCHAR. | `pass` |
