@@ -223,7 +223,6 @@ Skills cargados desde [config-ai](https://github.com/cristiansrc/config-ai):
 | [postgresql-standard](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/postgresql-standard) | Estándares PostgreSQL |
 | [restful-standard](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/restful-standard) | Convenciones REST |
 | [repository-dto-patterns](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/repository-dto-patterns) | Separación de capas |
-| [model-tier-routing](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/model-tier-routing) | Política de escalamiento de modelos |
 | [context-pinning](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/context-pinning) | Gestión de contexto crítico |
 | [documentation-lifecycle](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/documentation-lifecycle) | Ciclo de vida de documentación |
 | [git-ops](https://github.com/cristiansrc/config-ai/tree/main/active/opencode/skills/git-ops) | Automatización Git |
